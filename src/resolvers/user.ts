@@ -90,7 +90,7 @@ export class UserResolver {
     @Mutation(() => UserResponse)
     async login(
         @Arg("loginData") loginData: LoginData,
-        @Ctx() { em }: MyContext
+        @Ctx() { em, req }: MyContext
     ): Promise<UserResponse> {
         const { email: emailAddress, password } = loginData;
         const email = emailAddress.toLowerCase();
@@ -102,7 +102,9 @@ export class UserResolver {
         if (!valid) {
             return { errors: [{ field: 'password', message: 'Incorrect password' }] };
         }
-
+        console.log("FERFER ", req.session);
+        req.session!.userId = user._id;
+        console.log("FERFER ", req.session);
         return { user };
     }
 
