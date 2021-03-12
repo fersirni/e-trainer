@@ -56,10 +56,20 @@ export class UserResolver {
         return em.findOne(User, { _id });
     }
 
+    @Query(() => User, { nullable: true })
+    async me(@Ctx() { em, req }: MyContext) {
+        if (!req.session.userId) {
+            return null;
+        }
+        const user = await em.findOne(User, { _id: req.session.userId });
+        return user;
+
+    }
+
     @Mutation(() => UserResponse)
     async register(
         @Arg("registerData") registerData: RegisterUserData,
-        @Ctx() { em }: MyContext
+        @Ctx() { em, req }: MyContext
     ): Promise<UserResponse> {
         const { name, loginData: { email: emailAddress, password } } = registerData;
         const email = emailAddress.toLowerCase();
@@ -81,6 +91,7 @@ export class UserResolver {
         
         try {
             await em.persistAndFlush(user);
+            req.session.userId = user._id;
         } catch (error) {
             console.log(error.message);
         }
@@ -102,9 +113,9 @@ export class UserResolver {
         if (!valid) {
             return { errors: [{ field: 'password', message: 'Incorrect password' }] };
         }
-        console.log("FERFER ", req.session);
-        req.session!.userId = user._id;
-        console.log("FERFER ", req.session);
+
+        req.session.userId = user._id;
+        
         return { user };
     }
 
