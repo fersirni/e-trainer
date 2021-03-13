@@ -3,6 +3,7 @@ import { User } from "../entities/User";
 import { MyContext } from "../types";
 import { Resolver, Query, Ctx, Arg, Mutation, Field, InputType, ObjectType } from "type-graphql";
 import argon2 from "argon2";
+import { COOKIE_NAME } from "../constants";
 
 const validateEmail = (email: string) => {
     var mailformat = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
@@ -117,6 +118,22 @@ export class UserResolver {
         req.session.userId = user._id;
         
         return { user };
+    }
+
+    @Mutation(() => Boolean)
+    logout(@Ctx() { req, res }: MyContext) {
+      return new Promise((resolve) =>
+        req.session.destroy((err) => {
+          res.clearCookie(COOKIE_NAME);
+          if (err) {
+            console.log(err);
+            resolve(false);
+            return;
+          }
+  
+          resolve(true);
+        })
+      );
     }
 
     @Mutation(() => User, { nullable: true })
