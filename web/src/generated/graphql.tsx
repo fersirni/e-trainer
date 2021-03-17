@@ -141,6 +141,16 @@ export type RegisterMutation = (
   ) }
 );
 
+export type UnregisterMutationVariables = Exact<{
+  id: Scalars['Float'];
+}>;
+
+
+export type UnregisterMutation = (
+  { __typename?: 'Mutation' }
+  & Pick<Mutation, 'unregister'>
+);
+
 export type UpdateUserMutationVariables = Exact<{
   id: Scalars['Float'];
   email: Scalars['String'];
@@ -235,6 +245,15 @@ export const RegisterDocument = gql`
 
 export function useRegisterMutation() {
   return Urql.useMutation<RegisterMutation, RegisterMutationVariables>(RegisterDocument);
+};
+export const UnregisterDocument = gql`
+    mutation Unregister($id: Float!) {
+  unregister(id: $id)
+}
+    `;
+
+export function useUnregisterMutation() {
+  return Urql.useMutation<UnregisterMutation, UnregisterMutationVariables>(UnregisterDocument);
 };
 export const UpdateUserDocument = gql`
     mutation UpdateUser($id: Float!, $email: String!, $name: String!) {

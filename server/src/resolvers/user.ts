@@ -6,6 +6,8 @@ import argon2 from "argon2";
 import { COOKIE_NAME } from "../constants";
 
 const validateEmail = (email: string) => {
+    if (!email) return false;
+    email = email.toLowerCase();
     var mailformat = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
     return email.match(mailformat);
 }
@@ -77,8 +79,8 @@ export class UserResolver {
         if (name.length <= 2) {
             return { errors: [{ field: "name", message: "Length has to be grater than 2" }] };
         }
-        if (password.length <= 8) {
-            return { errors: [{ field: "password", message: "Length has to be grater than 8" }] };
+        if (password.length <= 7) {
+            return { errors: [{ field: "password", message: "Length has to be grater than 7" }] };
         }
         if (!validateEmail(email)) {
             return { errors: [{ field: "email", message: "The email is invalid" }] };
@@ -154,6 +156,10 @@ export class UserResolver {
             return { errors: [{ field: "email", message: "The email is invalid" }] };
         }
         email = email.toLowerCase();
+        const existingUser = await em.findOne(User, { email });
+        if (existingUser && _id !== existingUser._id) {
+            return { errors: [{ field: "email", message: "The email already taken" }] };
+        }
         if (user.email !== email) {
             user.email = email;
         }

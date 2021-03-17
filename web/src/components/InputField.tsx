@@ -23,6 +23,7 @@ export const InputField: React.FC<InputFieldProps> = ({
     <FormControl isInvalid={!!error}>
       <FormLabel htmlFor={field.name}>{label}</FormLabel>
       <Input
+        variant="flushed"
         {...field}
         {...props}
         id={field.name}

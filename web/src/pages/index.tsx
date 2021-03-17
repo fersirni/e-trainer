@@ -7,7 +7,7 @@ import { UserAuthentication } from "../components/UserAuthentication";
 import { AdminHome } from "../components/AdminHome";
 
 const Index = () => {
-  const [{ data: userData }] = useUsersQuery();
+  const [{ data: usersData }] = useUsersQuery();
   const [{ data, fetching }] = useMeQuery({
     pause: isServer(),
   });
@@ -17,7 +17,7 @@ const Index = () => {
     body = (
       <UserAuthentication />
     )
-  } else if(data.me._id === 15) { // Change this to admin profile
+  } else if(data.me._id === 8) { // Change this to admin profile
     body = (
       <AdminHome />
     );
@@ -27,11 +27,11 @@ const Index = () => {
         <NavBar />
         <div>Hello world</div>
       <br />
-      {!userData
+      {!usersData
         ? <div>loading...</div>
-        : userData.users.map((u) => (
+        : usersData.users.map((u) => (
             <div key={u._id}>
-              {u.name}: {u.email}
+              {u._id} - {u.name}: {u.email}
             </div>
           ))}
       </>

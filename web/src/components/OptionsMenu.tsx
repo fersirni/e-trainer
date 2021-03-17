@@ -33,7 +33,7 @@ export const OptionsMenu: React.FC<OptionsMenuProps> = ({}) => {
             router.push("/profile");
           }}
         >
-          Edit profile
+          Account Settings
         </MenuItem>
         <MenuItem
           icon={<CloseIcon />}

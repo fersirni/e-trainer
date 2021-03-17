@@ -7,6 +7,7 @@ import {
   MeDocument,
   MeQuery,
   RegisterMutation,
+  UnregisterMutation,
   UpdateUserMutation,
 } from "../generated/graphql";
 
@@ -74,6 +75,20 @@ export const createUrqlClient = (ssrExchange: any) => ({
                   return {
                     me: result.updateUser.user,
                   };
+                }
+              }
+            );
+          },
+          unregister: (_result, args, cache, info) => {
+            betterUpdateQuery<UnregisterMutation, MeQuery>(
+              cache,
+              { query: MeDocument },
+              _result,
+              (result, query) => {
+                if (!result.unregister) {
+                  return query;
+                } else {
+                  return { me: null };
                 }
               }
             );

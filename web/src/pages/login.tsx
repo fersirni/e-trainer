@@ -2,7 +2,7 @@ import React from "react";
 import { Formik, Form } from "formik";
 import { Wrapper } from "../components/Wrapper";
 import { InputField } from "../components/InputField";
-import { Box, Button } from "@chakra-ui/react";
+import { Box, Button, Center, Wrap, WrapItem } from "@chakra-ui/react";
 import { useLoginMutation } from "../generated/graphql";
 import { toErrorMap } from "../utils/toErrorMap";
 import { useRouter } from "next/router";
@@ -42,14 +42,35 @@ const Login: React.FC<loginProps> = ({}) => {
                 type="password"
               />
             </Box>
-            <Button
-              mt={4}
-              type="submit"
-              isLoading={isSubmitting}
-              colorScheme="teal"
-            >
-              Log in
-            </Button>
+            <Wrap mt={10} spacing="30px" justify="center">
+              <WrapItem>
+                <Center>
+                  <Button
+                    mt={4}
+                    type="submit"
+                    isLoading={isSubmitting}
+                    colorScheme="teal"
+                  >
+                    Log in
+                  </Button>
+                </Center>
+              </WrapItem>
+              <WrapItem>
+                <Center>
+                  <Button
+                    mt={4}
+                    type="reset"
+                    isLoading={isSubmitting}
+                    colorScheme="gray"
+                    onClick={() => {
+                      router.push("/");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </Center>
+              </WrapItem>
+            </Wrap>
           </Form>
         )}
       </Formik>

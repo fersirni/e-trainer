@@ -1,0 +1,3 @@
+mutation Unregister($id: Float!) {
+  unregister(id: $id)
+}
