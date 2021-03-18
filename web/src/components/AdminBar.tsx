@@ -16,6 +16,7 @@ import {
   TiBookmark,
   TiPuzzle,
   TiMessages,
+  TiHome,
 } from "react-icons/ti";
 import { Wrapper } from "./Wrapper";
 import { useRouter } from "next/router";
@@ -38,6 +39,14 @@ export const AdminBar: React.FC<AdminBarProps> = () => {
             icon={<Icon as={TiCogOutline} boxSize={8} />}
           />
           <MenuList>
+            <MenuItem
+              name="home"
+              icon={<Icon as={TiHome} boxSize={4} />}
+              onClick={() => router.push('/')}
+            >
+              Home
+            </MenuItem>
+            <MenuDivider />
             <MenuGroup title="Entities">
               <MenuItem
                 name="users"
@@ -46,7 +55,6 @@ export const AdminBar: React.FC<AdminBarProps> = () => {
               >
                 Users
               </MenuItem>
-              <MenuDivider />
               <MenuItem
                 name="categories"
                 icon={<Icon as={TiBookmark} boxSize={4} />}
