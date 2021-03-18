@@ -1,24 +1,43 @@
 import { NavBar } from "../components/NavBar";
 import { withUrqlClient } from "next-urql";
 import { createUrqlClient } from "../utils/createUrqlClient";
-import { useUsersQuery } from "../generated/graphql";
+import { useMeQuery, useUsersQuery } from "../generated/graphql";
+import { isServer } from "../utils/isServer";
+import { UserAuthentication } from "../components/UserAuthentication";
+import { AdminHome } from "../components/AdminHome";
 
 const Index = () => {
-  const [{ data }] = useUsersQuery();
-  return (
-    <>
-      <NavBar />
-      <div>Hello world</div>
+  const [{ data: usersData }] = useUsersQuery();
+  const [{ data, fetching }] = useMeQuery({
+    pause: isServer(),
+  });
+  let body = null;
+  if (fetching) {
+  } else if (!data?.me) {
+    body = (
+      <UserAuthentication />
+    )
+  } else if(data.me._id === 8) { // Change this to admin profile
+    body = (
+      <AdminHome />
+    );
+  } else {
+    body = (
+      <>
+        <NavBar />
+        <div>Hello world</div>
       <br />
-      {!data
+      {!usersData
         ? <div>loading...</div>
-        : data.users.map((u) => (
+        : usersData.users.map((u) => (
             <div key={u._id}>
-              {u.name}: {u.email}
+              {u._id} - {u.name}: {u.email}
             </div>
           ))}
-    </>
-  );
+      </>
+    );
+  }
+  return <>{body}</>;
 };
 
 export default withUrqlClient(createUrqlClient, { ssr: true })(Index);

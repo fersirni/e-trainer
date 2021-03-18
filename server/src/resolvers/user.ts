@@ -6,6 +6,8 @@ import argon2 from "argon2";
 import { COOKIE_NAME } from "../constants";
 
 const validateEmail = (email: string) => {
+    if (!email) return false;
+    email = email.toLowerCase();
     var mailformat = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
     return email.match(mailformat);
 }
@@ -77,8 +79,8 @@ export class UserResolver {
         if (name.length <= 2) {
             return { errors: [{ field: "name", message: "Length has to be grater than 2" }] };
         }
-        if (password.length <= 8) {
-            return { errors: [{ field: "password", message: "Length has to be grater than 8" }] };
+        if (password.length <= 7) {
+            return { errors: [{ field: "password", message: "Length has to be grater than 7" }] };
         }
         if (!validateEmail(email)) {
             return { errors: [{ field: "email", message: "The email is invalid" }] };
@@ -136,23 +138,40 @@ export class UserResolver {
       );
     }
 
-    @Mutation(() => User, { nullable: true })
+    @Mutation(() => UserResponse)
     async updateUser(
         @Arg("id") _id: number,
-        @Arg("name", () => String, { nullable: true }) name: string,
-        @Arg("email", () => String, { nullable: true }) email: string,
+        @Arg("name", () => String) name: string,
+        @Arg("email", () => String) email: string,
         @Ctx() { em }: MyContext
-    ): Promise<User | null> {
+    ): Promise<UserResponse> {
         const user = await em.findOne(User, { _id });
         if (!user) {
-            return null;
+            return { errors: [{ field: '_id', message: `User with id ${_id} not found` }] };
         }
-        if (typeof name !== undefined || typeof email !== undefined) {
-            if (name) user.name = name;
-            if (email) user.email = email.toLowerCase();
+        if (!name || name.length <= 2) {
+            return { errors: [{ field: "name", message: "Length has to be grater than 2" }] };
+        }
+        if (!email || !validateEmail(email)) {
+            return { errors: [{ field: "email", message: "The email is invalid" }] };
+        }
+        email = email.toLowerCase();
+        const existingUser = await em.findOne(User, { email });
+        if (existingUser && _id !== existingUser._id) {
+            return { errors: [{ field: "email", message: "The email already taken" }] };
+        }
+        if (user.email !== email) {
+            user.email = email;
+        }
+        if (user.name !== name) {
+            user.name = name;
+        }
+        try {
             await em.persistAndFlush(user);
+        } catch (error) {
+            console.log(error.message);
         }
-        return user;
+        return { user };
     }
 
     @Mutation(() => Boolean)

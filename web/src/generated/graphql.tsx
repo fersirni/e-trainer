@@ -40,7 +40,7 @@ export type Mutation = {
   register: UserResponse;
   login: UserResponse;
   logout: Scalars['Boolean'];
-  updateUser?: Maybe<User>;
+  updateUser: UserResponse;
   unregister: Scalars['Boolean'];
 };
 
@@ -56,8 +56,8 @@ export type MutationLoginArgs = {
 
 
 export type MutationUpdateUserArgs = {
-  email?: Maybe<Scalars['String']>;
-  name?: Maybe<Scalars['String']>;
+  email: Scalars['String'];
+  name: Scalars['String'];
   id: Scalars['Float'];
 };
 
@@ -141,6 +141,37 @@ export type RegisterMutation = (
   ) }
 );
 
+export type UnregisterMutationVariables = Exact<{
+  id: Scalars['Float'];
+}>;
+
+
+export type UnregisterMutation = (
+  { __typename?: 'Mutation' }
+  & Pick<Mutation, 'unregister'>
+);
+
+export type UpdateUserMutationVariables = Exact<{
+  id: Scalars['Float'];
+  email: Scalars['String'];
+  name: Scalars['String'];
+}>;
+
+
+export type UpdateUserMutation = (
+  { __typename?: 'Mutation' }
+  & { updateUser: (
+    { __typename?: 'UserResponse' }
+    & { user?: Maybe<(
+      { __typename?: 'User' }
+      & Pick<User, '_id' | 'name' | 'email'>
+    )>, errors?: Maybe<Array<(
+      { __typename?: 'FieldError' }
+      & Pick<FieldError, 'field' | 'message'>
+    )>> }
+  ) }
+);
+
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -214,6 +245,34 @@ export const RegisterDocument = gql`
 
 export function useRegisterMutation() {
   return Urql.useMutation<RegisterMutation, RegisterMutationVariables>(RegisterDocument);
+};
+export const UnregisterDocument = gql`
+    mutation Unregister($id: Float!) {
+  unregister(id: $id)
+}
+    `;
+
+export function useUnregisterMutation() {
+  return Urql.useMutation<UnregisterMutation, UnregisterMutationVariables>(UnregisterDocument);
+};
+export const UpdateUserDocument = gql`
+    mutation UpdateUser($id: Float!, $email: String!, $name: String!) {
+  updateUser(id: $id, name: $name, email: $email) {
+    user {
+      _id
+      name
+      email
+    }
+    errors {
+      field
+      message
+    }
+  }
+}
+    `;
+
+export function useUpdateUserMutation() {
+  return Urql.useMutation<UpdateUserMutation, UpdateUserMutationVariables>(UpdateUserDocument);
 };
 export const MeDocument = gql`
     query Me {
