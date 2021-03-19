@@ -216,7 +216,7 @@ export class UserResolver {
     email = email.toLowerCase();
     const user = await em.findOne(User, { email });
     if (!user) {
-      return true;
+      return false;
     }
     const token = v4();
     redis.set(

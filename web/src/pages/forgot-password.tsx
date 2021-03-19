@@ -6,11 +6,13 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { Form, Formik } from "formik";
+import { withUrqlClient } from "next-urql";
 import { useRouter } from "next/router";
 import React from "react";
 import { InputField } from "../components/InputField";
 import { Wrapper } from "../components/Wrapper";
 import { useForgotPasswordMutation } from "../generated/graphql";
+import { createUrqlClient } from "../utils/createUrqlClient";
 
 
 interface ForgotPasswordProps {}
@@ -91,4 +93,4 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({}) => {
   );
 };
 
-export default ForgotPassword;
+export default withUrqlClient(createUrqlClient)(ForgotPassword);
