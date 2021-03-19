@@ -39,6 +39,7 @@ export const OptionsMenu: React.FC<OptionsMenuProps> = ({}) => {
           icon={<CloseIcon />}
           onClick={() => {
             logout();
+            router.push('/');
           }}
         >
           Log out
