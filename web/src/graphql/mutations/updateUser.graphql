@@ -1,13 +1,5 @@
 mutation UpdateUser($id: Float!, $email: String!, $name: String!) {
   updateUser(id: $id, name: $name, email: $email) {
-    user {
-      _id
-      name
-      email
-    }
-    errors {
-      field
-      message
-    }
+    ...RegularUserResponse
   }
 }

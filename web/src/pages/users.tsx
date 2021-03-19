@@ -1,6 +1,7 @@
 import React from "react";
 import { Wrapper } from "../components/Wrapper";
 import {
+  Box,
   Heading,
   Icon,
   Table,
@@ -77,7 +78,7 @@ const Users: React.FC<usersProps> = ({}) => {
                 </Tr>
               ))
             ) : (
-              <div>Loading...</div>
+              <Box>Loading...</Box>
             )}
           </Tbody>
         </Table>
