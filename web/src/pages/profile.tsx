@@ -23,7 +23,7 @@ import {
   useDisclosure,
   useToast,
 } from "@chakra-ui/react";
-import { Exact, useForgotPasswordMutation, useMeQuery, useUnregisterMutation, useUpdateUserMutation } from "../generated/graphql";
+import { useForgotPasswordMutation, useMeQuery, useUnregisterMutation, useUpdateUserMutation } from "../generated/graphql";
 import { toErrorMap } from "../utils/toErrorMap";
 import { useRouter } from "next/router";
 import { createUrqlClient } from "../utils/createUrqlClient";
@@ -198,7 +198,7 @@ const Profile: React.FC<profileProps> = ({}) => {
           <Button w={'100%'} colorScheme="red" onClick={onOpen}>Delete account</Button>
           <AlertDialog
             motionPreset="slideInBottom"
-            leastDestructiveRef={cancelRef}
+            leastDestructiveRef={cancelRef as any}
             onClose={onClose}
             isOpen={isOpen}
             isCentered
@@ -212,7 +212,7 @@ const Profile: React.FC<profileProps> = ({}) => {
                 Are you sure you want to delete your account?
               </AlertDialogBody>
               <AlertDialogFooter>
-                <Button ref={cancelRef} onClick={onClose}>
+                <Button ref={cancelRef as any} onClick={onClose}>
                   No
                 </Button>
                 <Button colorScheme="red" ml={3} onClick={handleUnregister}>
