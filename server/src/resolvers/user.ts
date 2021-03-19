@@ -243,7 +243,8 @@ export class UserResolver {
         ],
       };
     }
-    const userId = await redis.get(FORGET_PASSWORD_PREFIX + token);
+    const key = FORGET_PASSWORD_PREFIX + token;
+    const userId = await redis.get(key);
     if (!userId) {
       return {
         errors: [{ field: "token", message: "Token expired" }],
@@ -259,7 +260,7 @@ export class UserResolver {
     user.password = await argon2.hash(newPassword);;
     await em.persistAndFlush(user);
     req.session.userId = user._id;
-    redis.del(FORGET_PASSWORD_PREFIX + token);
+    await redis.del(key);
     return { user };
   }
 }
