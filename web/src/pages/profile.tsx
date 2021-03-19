@@ -21,8 +21,9 @@ import {
   AlertDialogHeader,
   AlertDialogOverlay,
   useDisclosure,
+  useToast,
 } from "@chakra-ui/react";
-import { Exact, useMeQuery, useUnregisterMutation, useUpdateUserMutation } from "../generated/graphql";
+import { Exact, useForgotPasswordMutation, useMeQuery, useUnregisterMutation, useUpdateUserMutation } from "../generated/graphql";
 import { toErrorMap } from "../utils/toErrorMap";
 import { useRouter } from "next/router";
 import { createUrqlClient } from "../utils/createUrqlClient";
@@ -36,8 +37,10 @@ const Profile: React.FC<profileProps> = ({}) => {
   const [{ data: currentUserData, fetching }] = useMeQuery({
     pause: isServer(),
   });
+  const toast = useToast();
   const [{}, updateUser] = useUpdateUserMutation();
   const [{}, unregister] = useUnregisterMutation();
+  const [, forgotPassword] = useForgotPasswordMutation();
 
   const { isOpen, onOpen, onClose } = useDisclosure();
   const cancelRef = React.useRef();
@@ -60,6 +63,23 @@ const Profile: React.FC<profileProps> = ({}) => {
       }
     }
   };
+
+  const handleChangePassword = async () => {
+    const email = currentUserData?.me?.email;
+    if (email) {
+      const response = await forgotPassword({email});
+      if (response.data?.forgotPassword) {
+        toast({
+          title: "Sent!",
+          description: `Email sent to ${email}`,
+          status: "info",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    }
+  };
+
   const validateName = (name?: string) => {
     let error;
     const length = 2;
@@ -172,6 +192,9 @@ const Profile: React.FC<profileProps> = ({}) => {
           )}
         </Formik>
         <Center mt={8}>
+          <Button w={'100%'} colorScheme="blue" onClick={handleChangePassword}>Change password</Button>
+        </Center>
+        <Center mt={8}>
           <Button w={'100%'} colorScheme="red" onClick={onOpen}>Delete account</Button>
           <AlertDialog
             motionPreset="slideInBottom"
@@ -206,5 +229,4 @@ const Profile: React.FC<profileProps> = ({}) => {
 };
 
 export default withUrqlClient(createUrqlClient, { ssr: true })(Profile);
-
 
