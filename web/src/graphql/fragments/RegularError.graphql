@@ -1,4 +1,6 @@
-fragment RegularError on FieldError {
+fragment RegularError on Error {
+    message,
     field,
-    message
+    key,
+    entity
 }

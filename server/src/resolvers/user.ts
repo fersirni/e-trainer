@@ -14,6 +14,7 @@ import argon2 from "argon2";
 import { COOKIE_NAME, FORGET_PASSWORD_PREFIX } from "../constants";
 import { sendEmail } from "../utils/sendEmail";
 import { v4 } from "uuid";
+import { Not } from "typeorm";
 
 const validateEmail = (email: string) => {
   if (!email) return false;
@@ -39,17 +40,56 @@ class RegisterUserData {
 }
 
 @ObjectType()
-class FieldError {
-  @Field()
-  field: string;
+abstract class Error {
+  constructor(message: string) {
+    this.message = message;
+  }
+
+  setField(field: string) {
+    this.field = field;
+  }
+  setEntity(entity: string) {
+    this.entity = entity;
+  }
+  setKey(key: string) {
+    this.key = key;
+  }
+
   @Field()
   message: string;
+  @Field({ nullable: true})
+  field: string;
+  @Field({ nullable: true})
+  entity: string;
+  @Field({ nullable: true})
+  key: string;
+}
+
+class FieldError extends Error {
+  constructor(field: string, message: string) {
+    super(message);
+    super.setField(field);
+  }
+}
+
+class DBError extends Error {
+  constructor(entity: string, message: string) {
+    super(message);
+    super.setEntity(entity);
+  }
+}
+
+class CacheError extends Error {
+  constructor(key: string, message: string) {
+    super(message);
+    super.setKey(key);
+  }
 }
 
 @ObjectType()
 class UserResponse {
-  @Field(() => [FieldError], { nullable: true })
-  errors?: FieldError[];
+  @Field(() => [Error], { nullable: true })
+  errors?: Error[];
   @Field(() => User, { nullable: true })
   user?: User;
 }
@@ -57,96 +97,107 @@ class UserResponse {
 @Resolver()
 export class UserResolver {
   @Query(() => User, { nullable: true })
-  async me(@Ctx() { em, req }: MyContext) {
+  me(@Ctx() { req }: MyContext) {
     if (!req.session.userId) {
       return null;
     }
-    const user = await em.findOne(User, { _id: req.session.userId });
-    return user;
+    return User.findOne(req.session.userId);
   }
 
   @Query(() => User, { nullable: true })
-  user(@Arg("id") _id: number, @Ctx() { em }: MyContext): Promise<User | null> {
-    return em.findOne(User, { _id });
+  user(@Arg("id") _id: number): Promise<User | undefined> {
+    return User.findOne(_id);
   }
 
   @Query(() => [User])
-  users(@Ctx() { em }: MyContext): Promise<User[]> {
-    return em.find(User, {});
+  users(): Promise<User[]> {
+    return User.find();
   }
 
   @Mutation(() => UserResponse)
   async register(
     @Arg("registerData") registerData: RegisterUserData,
-    @Ctx() { em, req }: MyContext
+    @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
     const {
       name,
       loginData: { email: emailAddress, password },
     } = registerData;
-    const email = emailAddress.toLowerCase();
+    const email = emailAddress?.toLowerCase();
+    let errors = [];
     if (name.length <= 2) {
-      return {
-        errors: [{ field: "name", message: "Length has to be grater than 2" }],
-      };
+      errors.push(new FieldError("name", "Length has to be grater than 2"));
     }
     if (password.length <= 7) {
-      return {
-        errors: [
-          { field: "password", message: "Length has to be grater than 7" },
-        ],
-      };
+      errors.push(new FieldError("password", "Length has to be grater than 7"));
     }
     if (!validateEmail(email)) {
-      return { errors: [{ field: "email", message: "The email is invalid" }] };
+      errors.push(new FieldError("email", "The email is invalid"));
     }
-    const existingUser = await em.findOne(User, { email });
+    const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return {
-        errors: [{ field: "email", message: "The email already taken" }],
-      };
+      errors.push(new FieldError("email", "The email already taken"));
     }
-    const hashedPassword = await argon2.hash(password);
-    const user = em.create(User, { name, email, password: hashedPassword });
+    if (errors.length > 0) {
+      return { errors };
+    }
 
+    const hashedPassword = await argon2.hash(password);
+    let user;
     try {
-      await em.persistAndFlush(user);
+      user = await User.create({
+        name,
+        email,
+        password: hashedPassword
+      }).save();
       req.session.userId = user._id;
     } catch (error) {
+      error.push(new DBError("user", error.message));
       console.log(error.message);
+      return { errors };
     }
     return { user };
   }
 
   @Mutation(() => Boolean)
-  async unregister(
-    @Arg("id") _id: number,
-    @Ctx() { em }: MyContext
-  ): Promise<boolean> {
-    await em.nativeDelete(User, { _id });
-    return true;
+  async unregister(@Arg("id") _id: number): Promise<boolean> {
+    try {
+      await User.delete(_id);
+      return true;
+    } catch (error) {
+      console.log(error.message);
+      return false;
+    }
   }
 
   @Mutation(() => UserResponse)
   async login(
     @Arg("loginData") loginData: LoginData,
-    @Ctx() { em, req }: MyContext
+    @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
     const { email: emailAddress, password } = loginData;
     const email = emailAddress.toLowerCase();
-    const user = await em.findOne(User, { email });
-    if (!user) {
-      return {
-        errors: [{ field: "email", message: "The email is does not exist" }],
-      };
+    let errors = [];
+    let user;
+    try {
+      user = await User.findOne({ where: { email } });
+    } catch (error) {
+      console.log(error.message);
+      errors.push(new DBError("user", error.message));
+      return { errors };
     }
+    if (!user) {
+      errors.push(new FieldError("email", "The email is does not exist"));
+      return { errors };
+    }
+
     const valid = await argon2.verify(user.password, password);
     if (!valid) {
-      return { errors: [{ field: "password", message: "Incorrect password" }] };
+      errors.push(new FieldError("password", "Incorrect password"));
+      return { errors };
     }
 
     req.session.userId = user._id;
-
     return { user };
   }
 
@@ -170,40 +221,50 @@ export class UserResolver {
   async updateUser(
     @Arg("id") _id: number,
     @Arg("name", () => String) name: string,
-    @Arg("email", () => String) email: string,
-    @Ctx() { em }: MyContext
+    @Arg("email", () => String) email: string
   ): Promise<UserResponse> {
-    const user = await em.findOne(User, { _id });
-    if (!user) {
-      return {
-        errors: [{ field: "_id", message: `User with id ${_id} not found` }],
-      };
-    }
-    if (!name || name.length <= 2) {
-      return {
-        errors: [{ field: "name", message: "Length has to be grater than 2" }],
-      };
-    }
-    if (!email || !validateEmail(email)) {
-      return { errors: [{ field: "email", message: "The email is invalid" }] };
-    }
-    email = email.toLowerCase();
-    const existingUser = await em.findOne(User, { email });
-    if (existingUser && _id !== existingUser._id) {
-      return {
-        errors: [{ field: "email", message: "The email already taken" }],
-      };
-    }
-    if (user.email !== email) {
-      user.email = email;
-    }
-    if (user.name !== name) {
-      user.name = name;
-    }
+    let errors: Error[] = [];
+    let user: User | undefined;
     try {
-      await em.persistAndFlush(user);
+      user = await User.findOne(_id);
     } catch (error) {
       console.log(error.message);
+      errors.push(new DBError("user", error.message));
+      return { errors };
+    }
+    if (!user) {
+      errors.push(new FieldError("_id", `User with id ${_id} not found`));
+      return { errors };
+    }
+    if (!name || name.length <= 2) {
+      errors.push(new FieldError("name", "Length has to be grater than 2"));
+    }
+    if (!email || !validateEmail(email)) {
+      errors.push(new FieldError("email", "The email is invalid"));
+    }
+    email = email.toLowerCase();
+    const existingUser = await User.findOne({
+      where: { email, _id: Not(user._id) },
+    });
+    if (existingUser) {
+      errors.push(new FieldError("email", "The email already taken"));
+    }
+    if (errors.length > 0) {
+      return { errors };
+    }
+    let fieldsToUpdate = {};
+    if (user.email !== email) {
+      fieldsToUpdate = { ...fieldsToUpdate, email };
+    }
+    if (user.name !== name) {
+      fieldsToUpdate = { ...fieldsToUpdate, name };
+    }
+    try {
+      await User.update({ _id: user._id }, { ...fieldsToUpdate });
+    } catch (error) {
+      console.log(error.message);
+      errors.push(new DBError("user", error.message));
+      return { errors };
     }
     return { user };
   }
@@ -211,22 +272,28 @@ export class UserResolver {
   @Mutation(() => Boolean)
   async forgotPassword(
     @Arg("email") email: string,
-    @Ctx() { em, redis }: MyContext
+    @Ctx() { redis }: MyContext
   ) {
-    email = email.toLowerCase();
-    const user = await em.findOne(User, { email });
-    if (!user) {
+    try {
+      email = email?.toLowerCase();
+      const user = await User.findOne({ where: { email } });
+      if (!user) {
+        return false;
+      }
+
+      const token = v4();
+      redis.set(
+        FORGET_PASSWORD_PREFIX + token,
+        user._id,
+        "ex",
+        1000 * 60 * 60 * 24
+      );
+      const resetPasswordLink = `<a href="http://localhost:3000/change-password/${token}">Reset password</a>`;
+      await sendEmail(email, resetPasswordLink);
+    } catch (error) {
+      console.log(error.message);
       return false;
     }
-    const token = v4();
-    redis.set(
-      FORGET_PASSWORD_PREFIX + token,
-      user._id,
-      "ex",
-      1000 * 60 * 60 * 24
-    );
-    const resetPasswordLink = `<a href="http://localhost:3000/change-password/${token}">Reset password</a>`;
-    await sendEmail(email, resetPasswordLink);
     return true;
   }
 
@@ -234,31 +301,35 @@ export class UserResolver {
   async changePassword(
     @Arg("newPassword") newPassword: string,
     @Arg("token") token: string,
-    @Ctx() { em, redis, req }: MyContext
+    @Ctx() { redis, req }: MyContext
   ): Promise<UserResponse> {
-    if (newPassword.length <= 7) {
-      return {
-        errors: [
-          { field: "newPassword", message: "Length has to be grater than 7" },
-        ],
-      };
-    }
+    let errors = [];
     const key = FORGET_PASSWORD_PREFIX + token;
     const userId = await redis.get(key);
     if (!userId) {
-      return {
-        errors: [{ field: "token", message: "Token expired" }],
-      };
+      errors.push(new CacheError("token", "Token expired"));
+      return { errors };
     }
 
-    const user = await em.findOne(User, { _id: parseInt(userId) });
-    if (!user) {
-      return {
-        errors: [{ field: "token", message: "User no longer exists" }],
-      };
+    if (newPassword.length <= 7) {
+      errors.push(new FieldError("password", "Length has to be grater than 7"));
+      return { errors };
     }
-    user.password = await argon2.hash(newPassword);;
-    await em.persistAndFlush(user);
+
+    const _id = parseInt(userId);
+    let user;
+    try {
+      user = await User.findOne(_id);
+    } catch (error) {
+      console.log(error.message);
+      errors.push(new DBError("user", error.message));
+      return { errors };
+    }
+    if (!user) {
+      errors.push(new CacheError("token", "User no longer exists"));
+      return { errors };
+    }
+    await User.update({ _id }, { password: await argon2.hash(newPassword) });
     req.session.userId = user._id;
     await redis.del(key);
     return { user };

@@ -81,14 +81,16 @@ export type MutationChangePasswordArgs = {
 
 export type UserResponse = {
   __typename?: 'UserResponse';
-  errors?: Maybe<Array<FieldError>>;
+  errors?: Maybe<Array<Error>>;
   user?: Maybe<User>;
 };
 
-export type FieldError = {
-  __typename?: 'FieldError';
-  field: Scalars['String'];
+export type Error = {
+  __typename?: 'Error';
   message: Scalars['String'];
+  field?: Maybe<Scalars['String']>;
+  entity?: Maybe<Scalars['String']>;
+  key?: Maybe<Scalars['String']>;
 };
 
 export type RegisterUserData = {
@@ -102,8 +104,8 @@ export type LoginData = {
 };
 
 export type RegularErrorFragment = (
-  { __typename?: 'FieldError' }
-  & Pick<FieldError, 'field' | 'message'>
+  { __typename?: 'Error' }
+  & Pick<Error, 'message' | 'field' | 'key' | 'entity'>
 );
 
 export type RegularUserFragment = (
@@ -117,7 +119,7 @@ export type RegularUserResponseFragment = (
     { __typename?: 'User' }
     & RegularUserFragment
   )>, errors?: Maybe<Array<(
-    { __typename?: 'FieldError' }
+    { __typename?: 'Error' }
     & RegularErrorFragment
   )>> }
 );
@@ -237,9 +239,11 @@ export const RegularUserFragmentDoc = gql`
 }
     `;
 export const RegularErrorFragmentDoc = gql`
-    fragment RegularError on FieldError {
-  field
+    fragment RegularError on Error {
   message
+  field
+  key
+  entity
 }
     `;
 export const RegularUserResponseFragmentDoc = gql`
