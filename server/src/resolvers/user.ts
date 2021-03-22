@@ -15,6 +15,7 @@ import { COOKIE_NAME, FORGET_PASSWORD_PREFIX } from "../constants";
 import { sendEmail } from "../utils/sendEmail";
 import { v4 } from "uuid";
 import { Not } from "typeorm";
+import { Error, FieldError, DBError, CacheError } from "../utils/Error";
 
 const validateEmail = (email: string) => {
   if (!email) return false;
@@ -40,53 +41,6 @@ class RegisterUserData {
 }
 
 @ObjectType()
-abstract class Error {
-  constructor(message: string) {
-    this.message = message;
-  }
-
-  setField(field: string) {
-    this.field = field;
-  }
-  setEntity(entity: string) {
-    this.entity = entity;
-  }
-  setKey(key: string) {
-    this.key = key;
-  }
-
-  @Field()
-  message: string;
-  @Field({ nullable: true})
-  field: string;
-  @Field({ nullable: true})
-  entity: string;
-  @Field({ nullable: true})
-  key: string;
-}
-
-class FieldError extends Error {
-  constructor(field: string, message: string) {
-    super(message);
-    super.setField(field);
-  }
-}
-
-class DBError extends Error {
-  constructor(entity: string, message: string) {
-    super(message);
-    super.setEntity(entity);
-  }
-}
-
-class CacheError extends Error {
-  constructor(key: string, message: string) {
-    super(message);
-    super.setKey(key);
-  }
-}
-
-@ObjectType()
 class UserResponse {
   @Field(() => [Error], { nullable: true })
   errors?: Error[];
@@ -96,6 +50,42 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
+
+  private async validateRegisterData(name: string, password: string, email: string) {
+    let errors = [];
+    if (name.length <= 2) {
+      errors.push(new FieldError("name", "Length has to be grater than 2"));
+    }
+    if (password.length <= 7) {
+      errors.push(new FieldError("password", "Length has to be grater than 7"));
+    }
+    if (!validateEmail(email)) {
+      errors.push(new FieldError("email", "The email is invalid"));
+    }
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      errors.push(new FieldError("email", "The email already taken"));
+    }
+    return errors;
+  }
+
+  private async validateUpdateUser(name: string, email: string, userId: number) {
+    let errors = [];
+    if (!name || name.length <= 2) {
+      errors.push(new FieldError("name", "Length has to be grater than 2"));
+    }
+    if (!email || !validateEmail(email)) {
+      errors.push(new FieldError("email", "The email is invalid"));
+    }
+    const existingUser = await User.findOne({
+      where: { email, _id: Not(userId) },
+    });
+    if (existingUser) {
+      errors.push(new FieldError("email", "The email already taken"));
+    }
+    return errors;
+  }
+
   @Query(() => User, { nullable: true })
   me(@Ctx() { req }: MyContext) {
     if (!req.session.userId) {
@@ -124,20 +114,8 @@ export class UserResolver {
       loginData: { email: emailAddress, password },
     } = registerData;
     const email = emailAddress?.toLowerCase();
-    let errors = [];
-    if (name.length <= 2) {
-      errors.push(new FieldError("name", "Length has to be grater than 2"));
-    }
-    if (password.length <= 7) {
-      errors.push(new FieldError("password", "Length has to be grater than 7"));
-    }
-    if (!validateEmail(email)) {
-      errors.push(new FieldError("email", "The email is invalid"));
-    }
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      errors.push(new FieldError("email", "The email already taken"));
-    }
+ 
+    const errors = await this.validateRegisterData(name, password, email);
     if (errors.length > 0) {
       return { errors };
     }
@@ -145,14 +123,10 @@ export class UserResolver {
     const hashedPassword = await argon2.hash(password);
     let user;
     try {
-      user = await User.create({
-        name,
-        email,
-        password: hashedPassword
-      }).save();
+      user = await User.create({ name, email, password: hashedPassword }).save();
       req.session.userId = user._id;
     } catch (error) {
-      error.push(new DBError("user", error.message));
+      errors.push(new DBError("user", error.message));
       console.log(error.message);
       return { errors };
     }
@@ -175,17 +149,11 @@ export class UserResolver {
     @Arg("loginData") loginData: LoginData,
     @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
-    const { email: emailAddress, password } = loginData;
-    const email = emailAddress.toLowerCase();
+    let { email, password } = loginData;
+    email = email.toLowerCase();
+
     let errors = [];
-    let user;
-    try {
-      user = await User.findOne({ where: { email } });
-    } catch (error) {
-      console.log(error.message);
-      errors.push(new DBError("user", error.message));
-      return { errors };
-    }
+    const user = await User.findOne({ where: { email } });
     if (!user) {
       errors.push(new FieldError("email", "The email is does not exist"));
       return { errors };
@@ -211,7 +179,6 @@ export class UserResolver {
           resolve(false);
           return;
         }
-
         resolve(true);
       })
     );
@@ -223,32 +190,14 @@ export class UserResolver {
     @Arg("name", () => String) name: string,
     @Arg("email", () => String) email: string
   ): Promise<UserResponse> {
-    let errors: Error[] = [];
-    let user: User | undefined;
-    try {
-      user = await User.findOne(_id);
-    } catch (error) {
-      console.log(error.message);
-      errors.push(new DBError("user", error.message));
-      return { errors };
-    }
+    let errors = [];
+    const user = await User.findOne(_id);
     if (!user) {
       errors.push(new FieldError("_id", `User with id ${_id} not found`));
       return { errors };
     }
-    if (!name || name.length <= 2) {
-      errors.push(new FieldError("name", "Length has to be grater than 2"));
-    }
-    if (!email || !validateEmail(email)) {
-      errors.push(new FieldError("email", "The email is invalid"));
-    }
-    email = email.toLowerCase();
-    const existingUser = await User.findOne({
-      where: { email, _id: Not(user._id) },
-    });
-    if (existingUser) {
-      errors.push(new FieldError("email", "The email already taken"));
-    }
+    email = email?.toLowerCase();
+    errors = await this.validateUpdateUser(name, email, user._id);
     if (errors.length > 0) {
       return { errors };
     }

@@ -5,48 +5,53 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   BaseEntity,
-  OneToOne,
-  JoinColumn,
+  ManyToOne,
   OneToMany,
 } from "typeorm";
 import { ObjectType, Field, Int } from "type-graphql";
-import { Routine } from "./Routine";
+import { Step } from "../Step";
+import { Answer } from "../answerTypes/Answer";
 
 @ObjectType()
 @Entity()
-export class User extends BaseEntity {
+export class Question extends BaseEntity {
   @Field(() => Int)
   @PrimaryGeneratedColumn()
-  _id!: number;
+  id!: number;
 
   @Field()
   @Column()
   name!: string;
 
   @Field()
-  @Column({ unique: true })
-  email!: string;
+  @Column()
+  data!: string;
 
   @Field()
   @Column()
-  password!: string;
+  type!: string;
 
   @Field()
   @Column()
-  profile: string = 'user';
+  answerType!: string;
 
   @Field({ nullable: true })
   @Column({ nullable: true })
-  profilePicture?: string;
+  description?: string;
 
   @Field({ nullable: true })
-  @OneToOne(() => Routine)
-  @JoinColumn()
-  activeRoutine?: Routine;
+  @Column({ nullable: true })
+  options?: string;
 
-  @Field(() => [Routine])
-  @OneToMany(() => Routine, (routine) => routine.user)
-  routines: Routine[];
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  drawData?: string;
+
+  @ManyToOne(() => Step, (step) => step.questions)
+  step: Step;
+
+  @OneToMany(() => Answer, (answer) => answer.question)
+  answers: Answer[];
 
   @Field(() => String)
   @CreateDateColumn()

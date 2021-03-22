@@ -17,7 +17,7 @@ const Index = () => {
     body = (
       <UserAuthentication />
     )
-  } else if(data.me._id === 8) { // Change this to admin profile
+  } else if(data.me.profile === 'admin') {
     body = (
       <AdminHome />
     );

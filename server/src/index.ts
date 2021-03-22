@@ -12,6 +12,12 @@ import {createConnection} from "typeorm";
 import { User } from "./entities/User";
 import argon2 from "argon2";
 import { Routine } from "./entities/Routine";
+import { Category } from "./entities/Category";
+import { Exercise } from "./entities/Exercise";
+import { Step } from "./entities/Step";
+import { Question } from "./entities/questionTypes/Question";
+import { Answer } from "./entities/answerTypes/Answer";
+import { CategoryResolver } from "./resolvers/category";
 
 
 const main = async () => {
@@ -22,7 +28,7 @@ const main = async () => {
     password: 'postgres',
     logging: true,
     synchronize: true,
-    entities: [User, Routine]
+    entities: [User, Routine, Category, Exercise, Step, Question, Answer]
   });
 
   const app = express();
@@ -57,7 +63,7 @@ const main = async () => {
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [UserResolver],
+      resolvers: [UserResolver, CategoryResolver],
       validate: false,
     }),
     context: ({ req, res }) => ({ req, res, redis }),

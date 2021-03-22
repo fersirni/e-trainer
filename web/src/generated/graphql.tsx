@@ -12,6 +12,8 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
+  /** The javascript `Date` as string. Type represents date and time as the ISO Date string. */
+  DateTime: any;
 };
 
 export type Query = {
@@ -29,10 +31,53 @@ export type QueryUserArgs = {
 export type User = {
   __typename?: 'User';
   _id: Scalars['Int'];
-  createdAt: Scalars['String'];
-  updatedAt: Scalars['String'];
   name: Scalars['String'];
   email: Scalars['String'];
+  password: Scalars['String'];
+  profile: Scalars['String'];
+  profilePicture?: Maybe<Scalars['String']>;
+  activeRoutine?: Maybe<Routine>;
+  routines: Array<Routine>;
+  createdAt: Scalars['String'];
+  updatedAt: Scalars['String'];
+};
+
+export type Routine = {
+  __typename?: 'Routine';
+  id: Scalars['Int'];
+  name: Scalars['String'];
+  assignedBy: User;
+  startDate: Scalars['DateTime'];
+  dueDate?: Maybe<Scalars['DateTime']>;
+  description?: Maybe<Scalars['String']>;
+  exercises: Array<Exercise>;
+  createdAt: Scalars['String'];
+  updatedAt: Scalars['String'];
+};
+
+
+export type Exercise = {
+  __typename?: 'Exercise';
+  id: Scalars['Int'];
+  name: Scalars['String'];
+  difficulty: Scalars['String'];
+  description?: Maybe<Scalars['String']>;
+  options?: Maybe<Scalars['String']>;
+  steps: Array<Step>;
+  createdAt: Scalars['String'];
+  updatedAt: Scalars['String'];
+};
+
+export type Step = {
+  __typename?: 'Step';
+  id: Scalars['Int'];
+  name: Scalars['String'];
+  type: Scalars['String'];
+  description?: Maybe<Scalars['String']>;
+  options?: Maybe<Scalars['String']>;
+  ttl?: Maybe<Scalars['Float']>;
+  createdAt: Scalars['String'];
+  updatedAt: Scalars['String'];
 };
 
 export type Mutation = {
@@ -216,6 +261,7 @@ export type MeQuery = (
   { __typename?: 'Query' }
   & { me?: Maybe<(
     { __typename?: 'User' }
+    & Pick<User, 'profile'>
     & RegularUserFragment
   )> }
 );
@@ -334,6 +380,7 @@ export const MeDocument = gql`
     query Me {
   me {
     ...RegularUser
+    profile
   }
 }
     ${RegularUserFragmentDoc}`;

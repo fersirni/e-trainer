@@ -5,48 +5,36 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   BaseEntity,
-  OneToOne,
-  JoinColumn,
-  OneToMany,
+  ManyToOne,
 } from "typeorm";
 import { ObjectType, Field, Int } from "type-graphql";
-import { Routine } from "./Routine";
+import { Question } from "../questionTypes/Question";
 
 @ObjectType()
 @Entity()
-export class User extends BaseEntity {
+export class Answer extends BaseEntity {
   @Field(() => Int)
   @PrimaryGeneratedColumn()
-  _id!: number;
+  id!: number;
 
   @Field()
   @Column()
-  name!: string;
-
-  @Field()
-  @Column({ unique: true })
-  email!: string;
+  data!: string;
 
   @Field()
   @Column()
-  password!: string;
+  isCorrect!: boolean;
 
   @Field()
   @Column()
-  profile: string = 'user';
+  type!: string;
 
   @Field({ nullable: true })
   @Column({ nullable: true })
-  profilePicture?: string;
+  drawData?: string;
 
-  @Field({ nullable: true })
-  @OneToOne(() => Routine)
-  @JoinColumn()
-  activeRoutine?: Routine;
-
-  @Field(() => [Routine])
-  @OneToMany(() => Routine, (routine) => routine.user)
-  routines: Routine[];
+  @ManyToOne(() => Question, (question) => question.answers)
+  question: Question;
 
   @Field(() => String)
   @CreateDateColumn()

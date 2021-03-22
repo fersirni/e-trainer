@@ -1,43 +1,61 @@
-import {Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, BaseEntity, OneToOne, JoinColumn, ManyToOne } from "typeorm";
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  BaseEntity,
+  OneToOne,
+  JoinColumn,
+  ManyToOne,
+  ManyToMany,
+  JoinTable,
+} from "typeorm";
 import { ObjectType, Field, Int } from "type-graphql";
 import { User } from "./User";
+import { Exercise } from "./Exercise";
 
 @ObjectType()
 @Entity()
-export class Routine extends BaseEntity{
-    @Field(() => Int)
-    @PrimaryGeneratedColumn()
-    id!: number;
+export class Routine extends BaseEntity {
+  @Field(() => Int)
+  @PrimaryGeneratedColumn()
+  id!: number;
 
-    @Field(() => String)
-    @CreateDateColumn()
-    createdAt: Date;
+  @Field()
+  @Column()
+  name!: string;
 
-    @Field(() => String)
-    @UpdateDateColumn()
-    updatedAt: Date;
+  @Field(() => User)
+  @OneToOne(() => User)
+  @JoinColumn()
+  assignedBy!: User;
 
-    @Field()
-    @Column()
-    name!: string;
+  @Field()
+  @Column()
+  startDate!: Date;
 
-    @Field()
-    @Column()
-    description: string;
-   
-    @OneToOne(() => User)
-    @JoinColumn()
-    assignedBy: User; 
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  dueDate?: Date;
 
-    @Column()
-    startDate: Date;
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  description?: string;
 
-    @Column()
-    dueDate: Date;
+  @ManyToOne(() => User, (user) => user.routines)
+  user: User;
 
-    @ManyToOne(() => User, user => user.routines)
-    user: User;
-    
-    //@OneToMany(() => Exercise, exercise => exercise.routine)
-    //exercises: Exercise[];
+  @Field(() => [Exercise])
+  @ManyToMany(() => Exercise)
+  @JoinTable()
+  exercises: Exercise[];
+
+  @Field(() => String)
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @Field(() => String)
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

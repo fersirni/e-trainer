@@ -17,6 +17,7 @@ import {
   TiPuzzle,
   TiMessages,
   TiHome,
+  TiFlash,
 } from "react-icons/ti";
 import { Wrapper } from "./Wrapper";
 import { useRouter } from "next/router";
@@ -54,6 +55,13 @@ export const AdminBar: React.FC<AdminBarProps> = () => {
                 onClick={handleClick}
               >
                 Users
+              </MenuItem>
+              <MenuItem
+                name="routines"
+                icon={<Icon as={TiFlash} boxSize={4} />}
+                onClick={handleClick}
+              >
+                Routines
               </MenuItem>
               <MenuItem
                 name="categories"
