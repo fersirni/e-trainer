@@ -10,6 +10,9 @@ import connectRedis from "connect-redis";
 import cors from "cors";
 import {createConnection} from "typeorm";
 import { User } from "./entities/User";
+import argon2 from "argon2";
+import { Routine } from "./entities/Routine";
+
 
 const main = async () => {
   await createConnection({
@@ -19,7 +22,7 @@ const main = async () => {
     password: 'postgres',
     logging: true,
     synchronize: true,
-    entities: [User]
+    entities: [User, Routine]
   });
 
   const app = express();
@@ -64,6 +67,16 @@ const main = async () => {
     app,
     cors: false,
   });
+
+  const admin = await User.findOne({where: {email: "admin@admin.com"}});
+  if (!admin) {
+    await User.create({
+      name: "Admin",
+      email: "admin@admin.com",
+      password: await argon2.hash('admin'),
+      profile: 'admin'
+    }).save();
+  }
 
   app.listen(4000, () => {
     console.log("server started on localhost:4000");
