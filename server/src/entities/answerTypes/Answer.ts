@@ -22,7 +22,7 @@ export class Answer extends BaseEntity {
   data!: string;
 
   @Field()
-  @Column()
+  @Column({default: true})
   isCorrect!: boolean;
 
   @Field()
@@ -33,7 +33,9 @@ export class Answer extends BaseEntity {
   @Column({ nullable: true })
   drawData?: string;
 
-  @ManyToOne(() => Question, (question) => question.answers)
+  @ManyToOne(() => Question, (question) => question.answers, {
+    onDelete: "CASCADE",
+  })
   question: Question;
 
   @Field(() => String)

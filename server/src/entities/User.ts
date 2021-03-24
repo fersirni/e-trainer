@@ -8,9 +8,12 @@ import {
   OneToOne,
   JoinColumn,
   OneToMany,
+  ManyToMany,
+  JoinTable,
 } from "typeorm";
 import { ObjectType, Field, Int } from "type-graphql";
 import { Routine } from "./Routine";
+import { Category } from "./Category";
 
 @ObjectType()
 @Entity()
@@ -44,9 +47,14 @@ export class User extends BaseEntity {
   @JoinColumn()
   activeRoutine?: Routine;
 
-  @Field(() => [Routine])
+  @Field(() => [Routine], { nullable: true })
   @OneToMany(() => Routine, (routine) => routine.user)
   routines: Routine[];
+
+  @Field(() => [Category], { nullable: true })
+  @ManyToMany(() => Category, { cascade: true, eager: true })
+  @JoinTable()
+  categories : Category[];
 
   @Field(() => String)
   @CreateDateColumn()

@@ -47,10 +47,16 @@ export class Question extends BaseEntity {
   @Column({ nullable: true })
   drawData?: string;
 
-  @ManyToOne(() => Step, (step) => step.questions)
+  @ManyToOne(() => Step, (step) => step.questions, {
+    onDelete: "CASCADE",
+  })
   step: Step;
 
-  @OneToMany(() => Answer, (answer) => answer.question)
+  @Field(() => [Answer], { nullable: "itemsAndList" })
+  @OneToMany(() => Answer, (answer) => answer.question, {
+    cascade: true,
+    eager: true,
+  })
   answers: Answer[];
 
   @Field(() => String)

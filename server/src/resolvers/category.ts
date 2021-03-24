@@ -1,14 +1,21 @@
 import { Category } from "../entities/Category";
-import { DBError, Error, FieldError } from "../utils/Error";
+import { CacheError, DBError, Error, FieldError } from "../utils/Error";
 import {
   Arg,
+  Ctx,
   Field,
+  InputType,
   Mutation,
   ObjectType,
   Query,
   Resolver,
+  UseMiddleware,
 } from "type-graphql";
 import { getConnection, Not } from "typeorm";
+import { MyContext } from "../types";
+import { User } from "../entities/User";
+import { isAuth } from "../middleware/isAuth";
+import { ExerciseData } from "./exercise";
 
 @ObjectType()
 class CategoryResponse {
@@ -18,57 +25,135 @@ class CategoryResponse {
   category?: Category;
 }
 
+@InputType()
+class CategoryData {
+  @Field({ nullable: true })
+  id?: number;
+  @Field({ nullable: true })
+  name?: string;
+  @Field({ nullable: true })
+  options?: string;
+  @Field({ nullable: true })
+  description?: string;
+  @Field({ nullable: true, defaultValue: false })
+  isPublic?: boolean;
+  @Field(() => [ExerciseData], { nullable: true })
+  exercises?: ExerciseData[];
+}
+
 @Resolver()
 export class CategoryResolver {
   private async validateCategoryData(
-    name: string, 
-    description?: string, 
-    options?: string, 
-    id?: number) {
+    categoryData: CategoryData
+  ): Promise<Error[]> {
     let errors: Error[] = [];
-    if (!name || name.length < 5 ) {
-      errors.push(new FieldError("name", "The name length has to be grater than 5"))
+    const { id, name, options, description /* exercises */ } = categoryData;
+    if (name && name.length < 5) {
+      errors.push(
+        new FieldError("name", "The name length has to be grater than 5")
+      );
       return errors;
     }
-    const condition = { where: id? { name, id: Not(id) } : { name }};
+    const condition = { where: id ? { name, id: Not(id) } : { name } };
     const existingCategory = await Category.findOne(condition);
     if (existingCategory) {
-      errors.push(new FieldError("name", "The name is already taken"))
+      errors.push(new FieldError("name", "The name is already taken"));
       return errors;
     }
-
     // TODO: validate this fields. TBD
     console.log(description);
     console.log(options);
+    // console.log(exercises);
     return errors;
+  }
+  private async validateUpdateCategoryData(
+    categoryData: CategoryData
+  ): Promise<CategoryResponse> {
+    let errors: Error[] = [];
+    let category;
+    const { id } = categoryData;
+    if (!id) {
+      errors.push(new FieldError("id", "Cannot find category without id"));
+      return { errors };
+    }
+    category = await Category.findOne(id);
+    if (!category) {
+      errors.push(new FieldError("id", `Category with id ${id} not found`));
+      return { errors };
+    }
+    errors = await this.validateCategoryData(categoryData);
+    if (errors.length > 0) {
+      return { errors };
+    }
+    return { category };
+  }
+  private getFieldsToUpdate(category: Category, categoryData: CategoryData) {
+    let fieldsToUpdate = {};
+    const {
+      name,
+      options,
+      description,
+      isPublic /*, exercises*/,
+    } = categoryData;
+    if (name && category.name !== name) {
+      fieldsToUpdate = { ...fieldsToUpdate, name };
+    }
+    if (description && category.description !== description) {
+      fieldsToUpdate = { ...fieldsToUpdate, description };
+    }
+    if (options && category.options !== options) {
+      fieldsToUpdate = { ...fieldsToUpdate, options };
+    }
+    if (typeof  isPublic === 'boolean' && category.isPublic !== isPublic) {
+      fieldsToUpdate = { ...fieldsToUpdate, isPublic };
+    }
+    // TODO: Fix this. Probably two lists with the same data will be different.
+    // if (exercises && category.exercises !== exercises) {
+    //   fieldsToUpdate = { ...fieldsToUpdate, exercises };
+    // }
+    return fieldsToUpdate;
   }
 
   @Query(() => Category, { nullable: true })
   category(@Arg("id") id: number): Promise<Category | undefined> {
-    return Category.findOne(id);
+    return Category.findOne(id, { relations: ["exercises"] });
   }
 
   @Query(() => [Category])
   categories(): Promise<Category[]> {
-    return Category.find();
+    return Category.find({ relations: ["exercises"] });
   }
 
   @Mutation(() => CategoryResponse)
+  @UseMiddleware(isAuth)
   async createCategory(
-    @Arg("name", () => String) name: string,
-    @Arg("description", () => String, { nullable: true }) description?: string,
-    @Arg("options", () => String, { nullable: true }) options?: string
+    @Ctx() { req }: MyContext,
+    @Arg("categoryData") categoryData: CategoryData
   ): Promise<CategoryResponse> {
     let errors = [];
     let category: Category;
-    errors = await this.validateCategoryData(name, description, options);
+    errors = await this.validateCategoryData(categoryData);
     if (errors.length > 0) {
       return { errors };
     }
     try {
-      category = await Category.create({ name, description, options }).save();
+      const _id = req.session.userId;
+      const user = await User.findOne({ where: { _id } });
+      if (!user) {
+        errors.push(new DBError("user", `User with id ${_id} not found`));
+        return { errors };
+      }
+      category = await Category.create({
+        ...categoryData,
+        creatorId: req.session.userId,
+      }).save();
+      await getConnection()
+        .createQueryBuilder()
+        .relation(User, "categories")
+        .of(user)
+        .add(category);
     } catch (error) {
-      errors.push(new DBError("user", error.message));
+      errors.push(new DBError("category", error.message));
       console.log(error.message);
       return { errors };
     }
@@ -76,33 +161,32 @@ export class CategoryResolver {
   }
 
   @Mutation(() => CategoryResponse)
+  @UseMiddleware(isAuth)
   async updateCategory(
-    @Arg("id") id: number,
-    @Arg("name", () => String) name: string,
-    @Arg("description", () => String, { nullable: true }) description?: string,
-    @Arg("options", () => String,  { nullable: true }) options?: string
+    @Arg("categoryData") categoryData: CategoryData,
+    @Ctx() { req }: MyContext
   ): Promise<CategoryResponse> {
-    let errors = [];
-    let category = await Category.findOne(id);
-    if (!category) {
-      errors.push(new FieldError("id", `Category with id ${id} not found`));
-      return { errors };
-    }
-    errors = await this.validateCategoryData(name, description, options, id);
-
+    let { category, errors = [] } = await this.validateUpdateCategoryData(
+      categoryData
+    );
     if (errors.length > 0) {
       return { errors };
     }
-    let fieldsToUpdate = {};
-    if (category.name !== name) {
-      fieldsToUpdate = { ...fieldsToUpdate, name };
+    if (!category) {
+      errors.push(new DBError("category", "Error while getting the category"));
+      return { errors };
     }
-    if (category.description !== description) {
-      fieldsToUpdate = { ...fieldsToUpdate, description };
+    if (category.creatorId !== req.session.userId) {
+      errors.push(
+        new CacheError(
+          "token",
+          "You don't have permissions to update this category"
+        )
+      );
+      return { errors };
     }
-    if (category.options !== options) {
-      fieldsToUpdate = { ...fieldsToUpdate, options };
-    }
+    let fieldsToUpdate = this.getFieldsToUpdate(category, categoryData);
+    const { id } = categoryData;
     try {
       const result = await getConnection()
         .createQueryBuilder()
@@ -115,14 +199,14 @@ export class CategoryResolver {
       category = result.raw[0];
     } catch (error) {
       console.log(error.message);
-      errors.push(new DBError("user", error.message));
+      errors.push(new DBError("category", error.message));
       return { errors };
     }
     return { category };
   }
 
-
   @Mutation(() => Boolean)
+  @UseMiddleware(isAuth)
   async deleteCategory(@Arg("id") id: number): Promise<boolean> {
     try {
       await Category.delete(id);

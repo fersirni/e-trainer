@@ -21,6 +21,14 @@ export class Category extends BaseEntity {
   @Column({ unique: true })
   name!: string;
 
+  @Field()
+  @Column({ default: false })
+  isPublic!: boolean;
+
+  @Field()
+  @Column()
+  creatorId!: number;
+
   @Field({ nullable: true })
   @Column({ nullable: true })
   description?: string;
@@ -29,8 +37,11 @@ export class Category extends BaseEntity {
   @Column({ nullable: true })
   options?: string;
 
-  @Field(() => [Exercise], { nullable: 'itemsAndList' })
-  @OneToMany(() => Exercise, (exercise) => exercise.category)
+  @Field(() => [Exercise], { nullable: "itemsAndList" })
+  @OneToMany(() => Exercise, (exercise) => exercise.category, {
+    cascade: true,
+    eager: true,
+  })
   exercises: Exercise[];
 
   @Field(() => String)

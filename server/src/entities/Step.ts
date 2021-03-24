@@ -20,11 +20,11 @@ export class Step extends BaseEntity {
   id!: number;
 
   @Field()
-  @Column({ unique: true })
+  @Column()
   name!: string;
 
   @Field()
-  @Column()
+  @Column({ default: "interactive" })
   type!: string;
 
   @Field({ nullable: true })
@@ -39,10 +39,16 @@ export class Step extends BaseEntity {
   @Column({ nullable: true })
   ttl?: number;
 
-  @ManyToOne(() => Exercise, (exercise) => exercise.steps)
+  @ManyToOne(() => Exercise, (exercise) => exercise.steps, {
+    onDelete: "CASCADE",
+  })
   exercise: Exercise;
 
-  @OneToMany(() => Question, (question) => question.step)
+  @Field(() => [Question], { nullable: "itemsAndList" })
+  @OneToMany(() => Question, (question) => question.step, {
+    cascade: true,
+    eager: true,
+  })
   questions: Question[];
 
   @Field(() => String)

@@ -9,13 +9,15 @@ import {
   Field,
   InputType,
   ObjectType,
+  UseMiddleware,
 } from "type-graphql";
 import argon2 from "argon2";
 import { COOKIE_NAME, FORGET_PASSWORD_PREFIX } from "../constants";
 import { sendEmail } from "../utils/sendEmail";
 import { v4 } from "uuid";
-import { Not } from "typeorm";
+import { getConnection, Not } from "typeorm";
 import { Error, FieldError, DBError, CacheError } from "../utils/Error";
+import { isAuth } from "../middleware/isAuth";
 
 const validateEmail = (email: string) => {
   if (!email) return false;
@@ -50,8 +52,22 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
+  static async userUpdate(fieldsToUpdate: {}, _id: number) {
+    const result = await getConnection()
+      .createQueryBuilder()
+      .update(User)
+      .set(fieldsToUpdate)
+      .where({ _id })
+      .returning("*")
+      .execute();
+    return result.raw[0];
+  }
 
-  private async validateRegisterData(name: string, password: string, email: string) {
+  private async validateRegisterData(
+    name: string,
+    password: string,
+    email: string
+  ) {
     let errors = [];
     if (name.length <= 2) {
       errors.push(new FieldError("name", "Length has to be grater than 2"));
@@ -69,7 +85,11 @@ export class UserResolver {
     return errors;
   }
 
-  private async validateUpdateUser(name: string, email: string, userId: number) {
+  private async validateUpdateUser(
+    name: string,
+    email: string,
+    userId: number
+  ) {
     let errors = [];
     if (!name || name.length <= 2) {
       errors.push(new FieldError("name", "Length has to be grater than 2"));
@@ -114,7 +134,7 @@ export class UserResolver {
       loginData: { email: emailAddress, password },
     } = registerData;
     const email = emailAddress?.toLowerCase();
- 
+
     const errors = await this.validateRegisterData(name, password, email);
     if (errors.length > 0) {
       return { errors };
@@ -123,7 +143,11 @@ export class UserResolver {
     const hashedPassword = await argon2.hash(password);
     let user;
     try {
-      user = await User.create({ name, email, password: hashedPassword }).save();
+      user = await User.create({
+        name,
+        email,
+        password: hashedPassword,
+      }).save();
       req.session.userId = user._id;
     } catch (error) {
       errors.push(new DBError("user", error.message));
@@ -185,13 +209,14 @@ export class UserResolver {
   }
 
   @Mutation(() => UserResponse)
+  @UseMiddleware(isAuth)
   async updateUser(
     @Arg("id") _id: number,
     @Arg("name", () => String) name: string,
     @Arg("email", () => String) email: string
   ): Promise<UserResponse> {
     let errors = [];
-    const user = await User.findOne(_id);
+    let user = await User.findOne(_id);
     if (!user) {
       errors.push(new FieldError("_id", `User with id ${_id} not found`));
       return { errors };
@@ -209,7 +234,8 @@ export class UserResolver {
       fieldsToUpdate = { ...fieldsToUpdate, name };
     }
     try {
-      await User.update({ _id: user._id }, { ...fieldsToUpdate });
+      //await User.update({ _id: user._id }, { ...fieldsToUpdate });
+      user = await UserResolver.userUpdate(fieldsToUpdate, _id);
     } catch (error) {
       console.log(error.message);
       errors.push(new DBError("user", error.message));

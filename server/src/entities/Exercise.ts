@@ -20,11 +20,11 @@ export class Exercise extends BaseEntity {
   id!: number;
 
   @Field()
-  @Column({ unique: true })
+  @Column()
   name!: string;
 
   @Field()
-  @Column()
+  @Column({ default: "easy" })
   difficulty!: string;
 
   @Field({ nullable: true })
@@ -35,11 +35,16 @@ export class Exercise extends BaseEntity {
   @Column({ nullable: true })
   options?: string;
 
-  @ManyToOne(() => Category, (category) => category.exercises)
+  @ManyToOne(() => Category, (category) => category.exercises, {
+    onDelete: "CASCADE",
+  })
   category: Category;
 
-  @Field(() => [Step])
-  @OneToMany(() => Step, (step) => step.exercise)
+  @Field(() => [Step], { nullable: "itemsAndList" })
+  @OneToMany(() => Step, (step) => step.exercise, {
+    cascade: true,
+    eager: true,
+  })
   steps: Step[];
 
   @Field(() => String)

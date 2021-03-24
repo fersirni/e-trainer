@@ -8,7 +8,7 @@ import Redis from "ioredis";
 import session from "express-session";
 import connectRedis from "connect-redis";
 import cors from "cors";
-import {createConnection} from "typeorm";
+import { createConnection } from "typeorm";
 import { User } from "./entities/User";
 import argon2 from "argon2";
 import { Routine } from "./entities/Routine";
@@ -18,17 +18,20 @@ import { Step } from "./entities/Step";
 import { Question } from "./entities/questionTypes/Question";
 import { Answer } from "./entities/answerTypes/Answer";
 import { CategoryResolver } from "./resolvers/category";
-
+import { ExerciseResolver } from "./resolvers/exercise";
+import { StepResolver } from "./resolvers/step";
+import { QuestionResolver } from "./resolvers/question";
+import { AnswerResolver } from "./resolvers/answer";
 
 const main = async () => {
   await createConnection({
-    type: 'postgres',
-    database: 'e-trainer',
-    username: 'postgres',
-    password: 'postgres',
+    type: "postgres",
+    database: "e-trainer",
+    username: "postgres",
+    password: "postgres",
     logging: true,
     synchronize: true,
-    entities: [User, Routine, Category, Exercise, Step, Question, Answer]
+    entities: [User, Routine, Category, Exercise, Step, Question, Answer],
   });
 
   const app = express();
@@ -63,7 +66,14 @@ const main = async () => {
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [UserResolver, CategoryResolver],
+      resolvers: [
+        UserResolver,
+        CategoryResolver,
+        ExerciseResolver,
+        StepResolver,
+        QuestionResolver,
+        AnswerResolver
+      ],
       validate: false,
     }),
     context: ({ req, res }) => ({ req, res, redis }),
@@ -74,13 +84,13 @@ const main = async () => {
     cors: false,
   });
 
-  const admin = await User.findOne({where: {email: "admin@admin.com"}});
+  const admin = await User.findOne({ where: { email: "admin@admin.com" } });
   if (!admin) {
     await User.create({
       name: "Admin",
       email: "admin@admin.com",
-      password: await argon2.hash('admin'),
-      profile: 'admin'
+      password: await argon2.hash("admin"),
+      profile: "admin",
     }).save();
   }
 
