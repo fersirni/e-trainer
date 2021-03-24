@@ -12,7 +12,6 @@ import {
 } from "type-graphql";
 import { getConnection } from "typeorm";
 import { isAuth } from "../middleware/isAuth";
-import { Step } from "../entities/Step";
 import { ANSWER_TYPES } from "../constants";
 import { Question } from "../entities/questionTypes/Question";
 
