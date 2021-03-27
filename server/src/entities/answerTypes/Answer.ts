@@ -8,7 +8,7 @@ import {
   ManyToOne,
 } from "typeorm";
 import { ObjectType, Field, Int } from "type-graphql";
-import { Question } from "../questionTypes/Question";
+import { Dialog } from "../dialogTypes/Dialog";
 
 @ObjectType()
 @Entity()
@@ -33,10 +33,10 @@ export class Answer extends BaseEntity {
   @Column({ nullable: true })
   drawData?: string;
 
-  @ManyToOne(() => Question, (question) => question.answers, {
+  @ManyToOne(() => Dialog, (dialog) => dialog.answers, {
     onDelete: "CASCADE",
   })
-  question: Question;
+  dialog: Dialog;
 
   @Field(() => String)
   @CreateDateColumn()

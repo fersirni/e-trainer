@@ -107,10 +107,6 @@ export class CategoryResolver {
     if (typeof  isPublic === 'boolean' && category.isPublic !== isPublic) {
       fieldsToUpdate = { ...fieldsToUpdate, isPublic };
     }
-    // TODO: Fix this. Probably two lists with the same data will be different.
-    // if (exercises && category.exercises !== exercises) {
-    //   fieldsToUpdate = { ...fieldsToUpdate, exercises };
-    // }
     return fieldsToUpdate;
   }
 

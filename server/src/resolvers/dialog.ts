@@ -1,4 +1,4 @@
-import { Question } from "../entities/questionTypes/Question";
+import { Dialog } from "../entities/dialogTypes/Dialog";
 import { DBError, Error, FieldError } from "../utils/Error";
 import {
   Arg,
@@ -14,21 +14,23 @@ import { getConnection } from "typeorm";
 import { isAuth } from "../middleware/isAuth";
 import { Step } from "../entities/Step";
 import { ANSWER_TYPES, QUESTION_TYPES } from "../constants";
-import { AnswerData } from "./answer";
+import { AnswerData, AnswerResolver } from "./answer";
 
 
 @ObjectType()
-class QuestionResponse {
+class DialogResponse {
   @Field(() => [Error], { nullable: true })
   errors?: Error[];
-  @Field(() => Question, { nullable: true })
-  question?: Question;
+  @Field(() => Dialog, { nullable: true })
+  dialog?: Dialog;
 }
 
 @InputType()
-export class QuestionData {
+export class DialogData {
   @Field({ nullable: true })
   id?: number;
+  @Field({ nullable: true })
+  order?: number;
   @Field({ nullable: true })
   name?: string;
   @Field({ nullable: true })
@@ -48,11 +50,12 @@ export class QuestionData {
 }
 
 @Resolver()
-export class QuestionResolver {
-  private validateQuestionData(questionData: QuestionData): Error[] {
+export class DialogResolver {
+  private validateDialogData(dialogData: DialogData): Error[] {
     let errors: Error[] = [];
     const {
       id,
+      order,
       name,
       options,
       description,
@@ -60,7 +63,7 @@ export class QuestionResolver {
       answerType,
       data,
       drawData /* exercises */,
-    } = questionData;
+    } = dialogData;
     if (name && name.length < 5) {
       errors.push(
         new FieldError("name", "The name length has to be grater than 5")
@@ -88,33 +91,36 @@ export class QuestionResolver {
     console.log(options);
     console.log(data);
     console.log(drawData);
+    console.log(order);
     // console.log(exercises);
     return errors;
   }
-  private async validateUpdateQuestionData(
-    questionData: QuestionData
-  ): Promise<QuestionResponse> {
+  private async validateUpdateDialogData(
+    dialogData: DialogData
+  ): Promise<DialogResponse> {
     let errors: Error[] = [];
-    let question;
-    const { id } = questionData;
+    let dialog;
+    const { id } = dialogData;
     if (!id) {
-      errors.push(new FieldError("id", "Cannot find question without id"));
+      errors.push(new FieldError("id", "Cannot find dialog without id"));
       return { errors };
     }
-    question = await Question.findOne(id);
-    if (!question) {
-      errors.push(new FieldError("id", `Question with id ${id} not found`));
+    dialog = await Dialog.findOne(id);
+    if (!dialog) {
+      errors.push(new FieldError("id", `Dialog with id ${id} not found`));
       return { errors };
     }
-    errors = await this.validateQuestionData(questionData);
+    errors = await this.validateDialogData(dialogData);
     if (errors.length > 0) {
       return { errors };
     }
-    return { question };
+    return { dialog };
   }
-  private getFieldsToUpdate(question: Question, questionData: QuestionData) {
+
+  getFieldsToUpdate(dialogData: DialogData) {
     let fieldsToUpdate = {};
     const {
+      order,
       name,
       options,
       description,
@@ -122,55 +128,53 @@ export class QuestionResolver {
       answerType,
       data,
       drawData,
-    } = questionData;
-    if (name && question.name !== name) {
+    } = dialogData;
+    if (order) {
+      fieldsToUpdate = { ...fieldsToUpdate, order };
+    }
+    if (name) {
       fieldsToUpdate = { ...fieldsToUpdate, name };
     }
-    if (description && question.description !== description) {
+    if (description) {
       fieldsToUpdate = { ...fieldsToUpdate, description };
     }
-    if (options && question.options !== options) {
+    if (options) {
       fieldsToUpdate = { ...fieldsToUpdate, options };
     }
-    if (type && question.type !== type) {
+    if (type) {
       fieldsToUpdate = { ...fieldsToUpdate, type };
     }
-    if (answerType && question.answerType !== answerType) {
+    if (answerType) {
       fieldsToUpdate = { ...fieldsToUpdate, answerType };
     }
-    if (data && question.data !== data) {
+    if (data) {
       fieldsToUpdate = { ...fieldsToUpdate, data };
     }
-    if (drawData && question.drawData !== drawData) {
+    if (drawData) {
       fieldsToUpdate = { ...fieldsToUpdate, drawData };
     }
-
-    // TODO: Fix this. Probably two lists with the same data will be different.
-    // if (exercises && question.exercises !== exercises) {
-    //   fieldsToUpdate = { ...fieldsToUpdate, exercises };
-    // }
     return fieldsToUpdate;
   }
 
-  @Query(() => Question, { nullable: true })
-  question(@Arg("id") id: number): Promise<Question | undefined> {
-    return Question.findOne(id, { relations: ["answers"] });
+  @Query(() => Dialog, { nullable: true })
+  dialog(@Arg("id") id: number): Promise<Dialog | undefined> {
+    return Dialog.findOne(id, { relations: ["answers"] });
   }
 
-  @Query(() => [Question])
-  questions(): Promise<Question[]> {
-    return Question.find({ relations: ["answers"] });
+  @Query(() => [Dialog])
+  dialogs(): Promise<Dialog[]> {
+    return Dialog.find({ relations: ["answers"] });
   }
 
-  @Mutation(() => QuestionResponse)
+  @Mutation(() => DialogResponse)
   @UseMiddleware(isAuth)
-  async createQuestion(
+  async createDialog(
     @Arg("stepId") stepId: number,
-    @Arg("questionData") questionData: QuestionData
-  ): Promise<QuestionResponse> {
+    @Arg("dialogData") dialogData: DialogData
+  ): Promise<DialogResponse> {
     let errors = [];
-    let question: Question;
-    errors = this.validateQuestionData(questionData);
+    let dialog: Dialog;
+    errors = this.validateDialogData(dialogData);
     if (errors.length > 0) {
       return { errors };
     }
@@ -180,63 +184,72 @@ export class QuestionResolver {
         errors.push(new DBError("step", `Step with id ${stepId} not found`));
         return { errors };
       }
-      question = await Question.create({
-        ...questionData,
+      dialog = await Dialog.create({
+        ...dialogData,
       }).save();
       await getConnection()
         .createQueryBuilder()
-        .relation(Step, "questions")
+        .relation(Step, "dialogs")
         .of(step)
-        .add(question);
+        .add(dialog);
     } catch (error) {
-      errors.push(new DBError("question", error.message));
+      errors.push(new DBError("dialog", error.message));
       console.log(error.message);
       return { errors };
     }
-    return { question };
+    return { dialog };
   }
 
-  @Mutation(() => QuestionResponse)
+  @Mutation(() => DialogResponse)
   @UseMiddleware(isAuth)
-  async updateQuestion(
-    @Arg("questionData") questionData: QuestionData
-  ): Promise<QuestionResponse> {
-    let { question, errors = [] } = await this.validateUpdateQuestionData(
-      questionData
+  async updateDialog(
+    @Arg("dialogData") dialogData: DialogData
+  ): Promise<DialogResponse> {
+    let { dialog, errors = [] } = await this.validateUpdateDialogData(
+      dialogData
     );
     if (errors.length > 0) {
       return { errors };
     }
-    if (!question) {
-      errors.push(new DBError("question", "Error while getting the question"));
+    if (!dialog) {
+      errors.push(new DBError("dialog", "Error while getting the dialog"));
       return { errors };
     }
-
-    let fieldsToUpdate = this.getFieldsToUpdate(question, questionData);
-    const { id } = questionData;
+    const { id } = dialogData;
+    const fieldsToUpdate = this.getFieldsToUpdate(dialogData);
     try {
+      const answers = dialogData.answers || [];
+      const ar = new AnswerResolver();
+      for (let i = 0; i < answers.length; i++) {
+        const answer = answers[i];
+        if (answer.id) {
+          await ar.updateAnswer(answer);
+        } else {
+          await ar.createAnswer(dialog.id, answer);
+        }
+      } 
       const result = await getConnection()
         .createQueryBuilder()
-        .update(Question)
+        .update(Dialog)
         .set(fieldsToUpdate)
         .where("id = :id", { id })
         .returning("*")
         .execute();
-      // const result = await Question.update({ id: question.id }, { ...fieldsToUpdate });
-      question = result.raw[0];
+      // const result = await Dialog.update({ id: dialog.id }, { ...fieldsToUpdate });
+      dialog = result.raw[0];
     } catch (error) {
       console.log(error.message);
-      errors.push(new DBError("question", error.message));
+      errors.push(new DBError("dialog", error.message));
       return { errors };
     }
-    return { question };
+    return { dialog };
   }
 
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth)
-  async deleteQuestion(@Arg("id") id: number): Promise<boolean> {
+  async deleteDialog(@Arg("id") id: number): Promise<boolean> {
     try {
-      await Question.delete(id);
+      await Dialog.delete(id);
       return true;
     } catch (error) {
       console.log(error.message);

@@ -10,7 +10,7 @@ import {
 } from "typeorm";
 import { ObjectType, Field, Int } from "type-graphql";
 import { Exercise } from "./Exercise";
-import { Question } from "./questionTypes/Question";
+import { Dialog } from "./dialogTypes/Dialog";
 
 @ObjectType()
 @Entity()
@@ -18,6 +18,10 @@ export class Step extends BaseEntity {
   @Field(() => Int)
   @PrimaryGeneratedColumn()
   id!: number;
+
+  @Field()
+  @Column()
+  order!: number;
 
   @Field()
   @Column()
@@ -44,12 +48,12 @@ export class Step extends BaseEntity {
   })
   exercise: Exercise;
 
-  @Field(() => [Question], { nullable: "itemsAndList" })
-  @OneToMany(() => Question, (question) => question.step, {
+  @Field(() => [Dialog], { nullable: "itemsAndList" })
+  @OneToMany(() => Dialog, (dialog) => dialog.step, {
     cascade: true,
     eager: true,
   })
-  questions: Question[];
+  dialogs: Dialog[];
 
   @Field(() => String)
   @CreateDateColumn()

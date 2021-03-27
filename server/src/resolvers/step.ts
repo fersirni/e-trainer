@@ -13,7 +13,7 @@ import {
 import { getConnection } from "typeorm";
 import { isAuth } from "../middleware/isAuth";
 import { Exercise } from "../entities/Exercise";
-import { QuestionData } from "./question";
+import { DialogData, DialogResolver } from "./dialog";
 
 const STEP_TYPES = ["presentation", "information", "interactive", "results"];
 
@@ -30,6 +30,8 @@ export class StepData {
   @Field({ nullable: true })
   id?: number;
   @Field({ nullable: true })
+  order?: number;
+  @Field({ nullable: true })
   name?: string;
   @Field({ nullable: true })
   options?: string;
@@ -39,15 +41,15 @@ export class StepData {
   ttl?: number;
   @Field({ nullable: true })
   type?: string;
-  @Field(() => [QuestionData], { nullable: true })
-  questions?: QuestionData[];
+  @Field(() => [DialogData], { nullable: true })
+  dialogs?: DialogData[];
 }
 
 @Resolver()
 export class StepResolver {
   private validateStepData(stepData: StepData): Error[] {
     let errors: Error[] = [];
-    const { name, options, description, ttl, type /*, steps */ } = stepData;
+    const { order, name, options, description, ttl, type /*, steps */ } = stepData;
     if (name && name.length < 5) {
       return [
         new FieldError("name", "The name length has to be grater than 5"),
@@ -65,6 +67,7 @@ export class StepResolver {
     // TODO: validate this fields. TBD
     console.log(description);
     console.log(options);
+    console.log(order);
     // console.log(steps);
     return errors;
   }
@@ -89,39 +92,15 @@ export class StepResolver {
     }
     return { step };
   }
-  private getFieldsToUpdate(step: Step, stepData: StepData) {
-    let fieldsToUpdate = {};
-    const { name, options, description, type, ttl /*, questions*/ } = stepData;
-    if (name && step.name !== name) {
-      fieldsToUpdate = { ...fieldsToUpdate, name };
-    }
-    if (description && step.description !== description) {
-      fieldsToUpdate = { ...fieldsToUpdate, description };
-    }
-    if (options && step.options !== options) {
-      fieldsToUpdate = { ...fieldsToUpdate, options };
-    }
-    if (type && step.type !== type) {
-      fieldsToUpdate = { ...fieldsToUpdate, type };
-    }
-    if (ttl && step.ttl !== ttl) {
-      fieldsToUpdate = { ...fieldsToUpdate, ttl };
-    }
-    // TODO: Fix this. Probably two lists with the same data will be different.
-    // if (questions && step.questions !== questions ) {
-    //   fieldsToUpdate = { ...fieldsToUpdate, questions };
-    // }
-    return fieldsToUpdate;
-  }
 
   @Query(() => Step, { nullable: true })
   step(@Arg("id") id: number): Promise<Step | undefined> {
-    return Step.findOne(id, { relations: ["questions"] });
+    return Step.findOne(id, { relations: ["dialogs"] });
   }
 
   @Query(() => [Step])
   steps(): Promise<Step[]> {
-    return Step.find({ relations: ["questions"] });
+    return Step.find({ relations: ["dialogs"] });
   }
 
   @Mutation(() => StepResponse)
@@ -171,13 +150,24 @@ export class StepResolver {
       errors.push(new DBError("step", "Error while getting the step"));
       return { errors };
     }
-    let fieldsToUpdate = this.getFieldsToUpdate(step, stepData);
     const { id } = stepData;
     try {
+      const dialogs = stepData.dialogs || [];
+      delete stepData.id;
+      delete stepData.dialogs;
+      const dr = new DialogResolver();
+      for (let i = 0; i < dialogs.length; i++) {
+        const dialog = dialogs[i];
+        if (dialog.id) {
+          await dr.updateDialog(dialog);
+        } else {
+          await dr.createDialog(step.id, dialog);
+        }
+      } 
       const result = await getConnection()
         .createQueryBuilder()
         .update(Step)
-        .set(fieldsToUpdate)
+        .set(stepData)
         .where("id = :id", { id })
         .returning("*")
         .execute();

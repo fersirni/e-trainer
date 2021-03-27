@@ -14,10 +14,14 @@ import { Answer } from "../answerTypes/Answer";
 
 @ObjectType()
 @Entity()
-export class Question extends BaseEntity {
+export class Dialog extends BaseEntity {
   @Field(() => Int)
   @PrimaryGeneratedColumn()
   id!: number;
+
+  @Field()
+  @Column()
+  order!: number;
 
   @Field()
   @Column()
@@ -47,13 +51,13 @@ export class Question extends BaseEntity {
   @Column({ nullable: true })
   drawData?: string;
 
-  @ManyToOne(() => Step, (step) => step.questions, {
+  @ManyToOne(() => Step, (step) => step.dialogs, {
     onDelete: "CASCADE",
   })
   step: Step;
 
   @Field(() => [Answer], { nullable: "itemsAndList" })
-  @OneToMany(() => Answer, (answer) => answer.question, {
+  @OneToMany(() => Answer, (answer) => answer.dialog, {
     cascade: true,
     eager: true,
   })

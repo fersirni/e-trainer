@@ -13,7 +13,7 @@ import {
 import { getConnection } from "typeorm";
 import { isAuth } from "../middleware/isAuth";
 import { ANSWER_TYPES } from "../constants";
-import { Question } from "../entities/questionTypes/Question";
+import { Dialog } from "../entities/dialogTypes/Dialog";
 
 
 @ObjectType()
@@ -119,7 +119,7 @@ export class AnswerResolver {
   @Mutation(() => AnswerResponse)
   @UseMiddleware(isAuth)
   async createAnswer(
-    @Arg("questionId") questionId: number,
+    @Arg("dialogId") dialogId: number,
     @Arg("answerData") answerData: AnswerData
   ): Promise<AnswerResponse> {
     let errors = [];
@@ -129,9 +129,9 @@ export class AnswerResolver {
       return { errors };
     }
     try {
-      const question = await Question.findOne(questionId);
-      if (!question) {
-        errors.push(new DBError("question", `Question with id ${questionId} not found`));
+      const dialog = await Dialog.findOne(dialogId);
+      if (!dialog) {
+        errors.push(new DBError("dialog", `Dialog with id ${dialogId} not found`));
         return { errors };
       }
       answer = await Answer.create({
@@ -139,8 +139,8 @@ export class AnswerResolver {
       }).save();
       await getConnection()
         .createQueryBuilder()
-        .relation(Question, "answers")
-        .of(question)
+        .relation(Dialog, "answers")
+        .of(dialog)
         .add(answer);
     } catch (error) {
       errors.push(new DBError("answer", error.message));

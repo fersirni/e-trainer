@@ -13,7 +13,8 @@ import {
 import { getConnection } from "typeorm";
 import { isAuth } from "../middleware/isAuth";
 import { Category } from "../entities/Category";
-import { StepData } from "./step";
+import { StepData, StepResolver } from "./step";
+import { Step } from "../entities/Step";
 
 const DIFFICULTY_LEVELS = ["easy", "normal", "hard", "very difficult", "god"];
 
@@ -43,6 +44,13 @@ export class ExerciseData {
 
 @Resolver()
 export class ExerciseResolver {
+  private isIncluded(step: Step, steps: StepData[]): boolean {
+    const included = steps.find(s => s.id && s.id === step.id);
+    if (included) {
+      return true;
+    }
+    return false;
+  }
   private validateExerciseData(exerciseData: ExerciseData): Error[] {
     let errors: Error[] = [];
     const {
@@ -103,10 +111,6 @@ export class ExerciseResolver {
     if (difficulty && exercise.difficulty !== difficulty) {
       fieldsToUpdate = { ...fieldsToUpdate, difficulty };
     }
-    // TODO: Fix this. Probably two lists with the same data will be different.
-    // if (steps && exercise.steps !== steps) {
-    //   fieldsToUpdate = { ...fieldsToUpdate, steps };
-    // }
     return fieldsToUpdate;
   }
 
@@ -174,6 +178,27 @@ export class ExerciseResolver {
     let fieldsToUpdate = this.getFieldsToUpdate(exercise, exerciseData);
     const { id } = exerciseData;
     try {
+      const steps = exerciseData.steps || [];
+      const stepsToRemove = exercise.steps.filter( step => !this.isIncluded(step, steps));
+      delete exerciseData.id;
+      delete exerciseData.steps;
+      const sr = new StepResolver();
+      for (let i = 0; i < steps.length; i++) {
+        const step = steps[i];
+        if (step.id) {
+          await sr.updateStep(step);
+        } else {
+          await sr.createStep(exercise.id, step);
+        }
+      }
+
+      if (stepsToRemove.length > 0) {
+        await getConnection()
+          .createQueryBuilder()
+          .relation(Exercise, "steps")
+          .of(exercise) // you can use just post id as well
+          .remove(stepsToRemove);
+      }
       const result = await getConnection()
         .createQueryBuilder()
         .update(Exercise)

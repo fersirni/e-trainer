@@ -15,12 +15,12 @@ import { Routine } from "./entities/Routine";
 import { Category } from "./entities/Category";
 import { Exercise } from "./entities/Exercise";
 import { Step } from "./entities/Step";
-import { Question } from "./entities/questionTypes/Question";
+import { Dialog } from "./entities/dialogTypes/Dialog";
 import { Answer } from "./entities/answerTypes/Answer";
 import { CategoryResolver } from "./resolvers/category";
 import { ExerciseResolver } from "./resolvers/exercise";
 import { StepResolver } from "./resolvers/step";
-import { QuestionResolver } from "./resolvers/question";
+import { DialogResolver } from "./resolvers/dialog";
 import { AnswerResolver } from "./resolvers/answer";
 
 const main = async () => {
@@ -31,7 +31,7 @@ const main = async () => {
     password: "postgres",
     logging: true,
     synchronize: true,
-    entities: [User, Routine, Category, Exercise, Step, Question, Answer],
+    entities: [User, Routine, Category, Exercise, Step, Dialog, Answer],
   });
 
   const app = express();
@@ -71,7 +71,7 @@ const main = async () => {
         CategoryResolver,
         ExerciseResolver,
         StepResolver,
-        QuestionResolver,
+        DialogResolver,
         AnswerResolver
       ],
       validate: false,
