@@ -14,6 +14,7 @@ import { getConnection } from "typeorm";
 import { isAuth } from "../middleware/isAuth";
 import { Exercise } from "../entities/Exercise";
 import { DialogData, DialogResolver } from "./dialog";
+import { Dialog } from "../entities/dialogTypes/Dialog";
 
 const STEP_TYPES = ["presentation", "information", "interactive", "results"];
 
@@ -47,6 +48,13 @@ export class StepData {
 
 @Resolver()
 export class StepResolver {
+  private isIncluded(dialog: Dialog, dialogs: DialogData[]): boolean {
+    const included = dialogs.find(d => d.id && d.id === dialog.id);
+    if (included) {
+      return true;
+    }
+    return false;
+  }
   private validateStepData(stepData: StepData): Error[] {
     let errors: Error[] = [];
     const { order, name, options, description, ttl, type /*, steps */ } = stepData;
@@ -100,7 +108,7 @@ export class StepResolver {
 
   @Query(() => [Step])
   steps(): Promise<Step[]> {
-    return Step.find({ relations: ["dialogs"] });
+    return Step.find({ relations: ["dialogs"], order: { id: "ASC" } });
   }
 
   @Mutation(() => StepResponse)
@@ -153,17 +161,34 @@ export class StepResolver {
     const { id } = stepData;
     try {
       const dialogs = stepData.dialogs || [];
-      delete stepData.id;
-      delete stepData.dialogs;
       const dr = new DialogResolver();
       for (let i = 0; i < dialogs.length; i++) {
         const dialog = dialogs[i];
         if (dialog.id) {
           await dr.updateDialog(dialog);
+          await getConnection()
+          .createQueryBuilder()
+          .relation(Step, "dialogs")
+          .of(step)
+          .add(dialog.id);
         } else {
           await dr.createDialog(step.id, dialog);
         }
       } 
+      
+      if (dialogs.length > 0 && step.dialogs && step.dialogs.length > 0) {        
+        const dialogsToRemove = step.dialogs.filter( dialog => !this.isIncluded(dialog, dialogs));
+        if (dialogsToRemove.length > 0) {
+          await getConnection()
+          .createQueryBuilder()
+          .relation(Step, "dialogs")
+          .of(step)
+          .remove(dialogsToRemove);
+        }
+      }
+      delete stepData.id;
+      delete stepData.dialogs;
+
       const result = await getConnection()
         .createQueryBuilder()
         .update(Step)

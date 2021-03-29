@@ -5,6 +5,7 @@ import {
   Ctx,
   Field,
   InputType,
+  Int,
   Mutation,
   ObjectType,
   Query,
@@ -23,6 +24,12 @@ class CategoryResponse {
   errors?: Error[];
   @Field(() => Category, { nullable: true })
   category?: Category;
+}
+
+@InputType()
+class UpdatedExercises {
+  @Field(() => [Int], {defaultValue: []})
+  ids: number[]
 }
 
 @InputType()
@@ -47,7 +54,7 @@ export class CategoryResolver {
     categoryData: CategoryData
   ): Promise<Error[]> {
     let errors: Error[] = [];
-    const { id, name, options, description /* exercises */ } = categoryData;
+    const { id, name, options, description } = categoryData;
     if (name && name.length < 5) {
       errors.push(
         new FieldError("name", "The name length has to be grater than 5")
@@ -89,12 +96,7 @@ export class CategoryResolver {
   }
   private getFieldsToUpdate(category: Category, categoryData: CategoryData) {
     let fieldsToUpdate = {};
-    const {
-      name,
-      options,
-      description,
-      isPublic /*, exercises*/,
-    } = categoryData;
+    const { name, options, description, isPublic } = categoryData;
     if (name && category.name !== name) {
       fieldsToUpdate = { ...fieldsToUpdate, name };
     }
@@ -104,7 +106,7 @@ export class CategoryResolver {
     if (options && category.options !== options) {
       fieldsToUpdate = { ...fieldsToUpdate, options };
     }
-    if (typeof  isPublic === 'boolean' && category.isPublic !== isPublic) {
+    if (typeof isPublic === "boolean" && category.isPublic !== isPublic) {
       fieldsToUpdate = { ...fieldsToUpdate, isPublic };
     }
     return fieldsToUpdate;
@@ -206,6 +208,26 @@ export class CategoryResolver {
   async deleteCategory(@Arg("id") id: number): Promise<boolean> {
     try {
       await Category.delete(id);
+      return true;
+    } catch (error) {
+      console.log(error.message);
+      return false;
+    }
+  }
+
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth)
+  async updateExercises(
+    @Arg("categoryId") id: number,
+    @Arg("removed") removed: UpdatedExercises,
+    @Arg("added") added: UpdatedExercises
+  ): Promise<Boolean> {
+    try {
+      await getConnection()
+        .createQueryBuilder()
+        .relation(Category, "exercises")
+        .of(id)
+        .addAndRemove(added.ids, removed.ids);
       return true;
     } catch (error) {
       console.log(error.message);

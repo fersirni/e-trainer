@@ -15,6 +15,7 @@ import { isAuth } from "../middleware/isAuth";
 import { Step } from "../entities/Step";
 import { ANSWER_TYPES, QUESTION_TYPES } from "../constants";
 import { AnswerData, AnswerResolver } from "./answer";
+import { Answer } from "../entities/answerTypes/Answer";
 
 
 @ObjectType()
@@ -51,6 +52,13 @@ export class DialogData {
 
 @Resolver()
 export class DialogResolver {
+  private isIncluded(answer: Answer, answers: AnswerData[]): boolean {
+    const included = answers.find(a => a.id && a.id === answer.id);
+    if (included) {
+      return true;
+    }
+    return false;
+  }
   private validateDialogData(dialogData: DialogData): Error[] {
     let errors: Error[] = [];
     const {
@@ -224,10 +232,25 @@ export class DialogResolver {
         const answer = answers[i];
         if (answer.id) {
           await ar.updateAnswer(answer);
+          await getConnection()
+            .createQueryBuilder()
+            .relation(Dialog, "answers")
+            .of(dialog)
+            .add(answer.id);
         } else {
           await ar.createAnswer(dialog.id, answer);
         }
       } 
+      if (answers.length > 0 && dialog.answers && dialog.answers.length > 0) {
+        const answersToRemove = dialog.answers.filter( answer => !this.isIncluded(answer, answers));
+        if (answersToRemove.length > 0) {
+          await getConnection()
+            .createQueryBuilder()
+            .relation(Dialog, "answers")
+            .of(dialog)
+            .remove(answersToRemove);
+        }
+      }
       const result = await getConnection()
         .createQueryBuilder()
         .update(Dialog)

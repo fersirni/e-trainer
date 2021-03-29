@@ -4,6 +4,7 @@ import {
   Arg,
   Field,
   InputType,
+  Int,
   Mutation,
   ObjectType,
   Query,
@@ -13,8 +14,7 @@ import {
 import { getConnection } from "typeorm";
 import { isAuth } from "../middleware/isAuth";
 import { Category } from "../entities/Category";
-import { StepData, StepResolver } from "./step";
-import { Step } from "../entities/Step";
+import { StepData } from "./step";
 
 const DIFFICULTY_LEVELS = ["easy", "normal", "hard", "very difficult", "god"];
 
@@ -24,6 +24,12 @@ class ExerciseResponse {
   errors?: Error[];
   @Field(() => Exercise, { nullable: true })
   exercise?: Exercise;
+}
+
+@InputType()
+class UpdatedSteps {
+  @Field(() => [Int], {defaultValue: []})
+  ids: number[]
 }
 
 @InputType()
@@ -44,20 +50,13 @@ export class ExerciseData {
 
 @Resolver()
 export class ExerciseResolver {
-  private isIncluded(step: Step, steps: StepData[]): boolean {
-    const included = steps.find(s => s.id && s.id === step.id);
-    if (included) {
-      return true;
-    }
-    return false;
-  }
   private validateExerciseData(exerciseData: ExerciseData): Error[] {
     let errors: Error[] = [];
     const {
       name,
       options,
       description,
-      difficulty /*, steps */,
+      difficulty,
     } = exerciseData;
     if (name && name.length < 5) {
       return [
@@ -178,27 +177,6 @@ export class ExerciseResolver {
     let fieldsToUpdate = this.getFieldsToUpdate(exercise, exerciseData);
     const { id } = exerciseData;
     try {
-      const steps = exerciseData.steps || [];
-      const stepsToRemove = exercise.steps.filter( step => !this.isIncluded(step, steps));
-      delete exerciseData.id;
-      delete exerciseData.steps;
-      const sr = new StepResolver();
-      for (let i = 0; i < steps.length; i++) {
-        const step = steps[i];
-        if (step.id) {
-          await sr.updateStep(step);
-        } else {
-          await sr.createStep(exercise.id, step);
-        }
-      }
-
-      if (stepsToRemove.length > 0) {
-        await getConnection()
-          .createQueryBuilder()
-          .relation(Exercise, "steps")
-          .of(exercise) // you can use just post id as well
-          .remove(stepsToRemove);
-      }
       const result = await getConnection()
         .createQueryBuilder()
         .update(Exercise)
@@ -206,7 +184,6 @@ export class ExerciseResolver {
         .where("id = :id", { id })
         .returning("*")
         .execute();
-      // const result = await Exercise.update({ id: exercise.id }, { ...fieldsToUpdate });
       exercise = result.raw[0];
     } catch (error) {
       console.log(error.message);
@@ -221,6 +198,26 @@ export class ExerciseResolver {
   async deleteExercise(@Arg("id") id: number): Promise<boolean> {
     try {
       await Exercise.delete(id);
+      return true;
+    } catch (error) {
+      console.log(error.message);
+      return false;
+    }
+  }
+
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth)
+  async updateSteps(
+    @Arg("exerciseId") id: number,
+    @Arg("removed") removed: UpdatedSteps,
+    @Arg("added") added: UpdatedSteps
+  ): Promise<Boolean> {
+    try {
+      await getConnection()
+        .createQueryBuilder()
+        .relation(Exercise, "steps")
+        .of(id)
+        .addAndRemove(added.ids, removed.ids);
       return true;
     } catch (error) {
       console.log(error.message);
