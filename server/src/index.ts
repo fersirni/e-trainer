@@ -11,7 +11,7 @@ import cors from "cors";
 import { createConnection } from "typeorm";
 import { User } from "./entities/User";
 import argon2 from "argon2";
-import { Routine } from "./entities/Routine";
+import { Activity } from "./entities/Activity";
 import { Category } from "./entities/Category";
 import { Exercise } from "./entities/Exercise";
 import { Step } from "./entities/Step";
@@ -31,7 +31,7 @@ const main = async () => {
     password: "postgres",
     logging: true,
     synchronize: true,
-    entities: [User, Routine, Category, Exercise, Step, Dialog, Answer],
+    entities: [User, Activity, Category, Exercise, Step, Dialog, Answer],
   });
 
   const app = express();

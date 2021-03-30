@@ -15,7 +15,6 @@ import {
   TiCogOutline,
   TiBookmark,
   TiPuzzle,
-  TiMessages,
   TiHome,
   TiFlash,
 } from "react-icons/ti";
@@ -57,11 +56,11 @@ export const AdminBar: React.FC<AdminBarProps> = () => {
                 Users
               </MenuItem>
               <MenuItem
-                name="routines"
+                name="activities"
                 icon={<Icon as={TiFlash} boxSize={4} />}
                 onClick={handleClick}
               >
-                Routines
+                Activities
               </MenuItem>
               <MenuItem
                 name="categories"
@@ -76,13 +75,6 @@ export const AdminBar: React.FC<AdminBarProps> = () => {
                 onClick={handleClick}
               >
                 Exercises
-              </MenuItem>
-              <MenuItem
-                name="steps"
-                icon={<Icon as={TiMessages} boxSize={4} />}
-                onClick={handleClick}
-              >
-                Steps
               </MenuItem>
             </MenuGroup>
           </MenuList>

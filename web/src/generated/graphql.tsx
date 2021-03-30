@@ -21,10 +21,45 @@ export type Query = {
   me?: Maybe<User>;
   user?: Maybe<User>;
   users: Array<User>;
+  answer?: Maybe<Answer>;
+  answers: Array<Answer>;
+  dialog?: Maybe<Dialog>;
+  dialogs: Array<Dialog>;
+  step?: Maybe<Step>;
+  steps: Array<Step>;
+  exercise?: Maybe<Exercise>;
+  exercises: Array<Exercise>;
+  category?: Maybe<Category>;
+  categories: Array<Category>;
 };
 
 
 export type QueryUserArgs = {
+  id: Scalars['Float'];
+};
+
+
+export type QueryAnswerArgs = {
+  id: Scalars['Float'];
+};
+
+
+export type QueryDialogArgs = {
+  id: Scalars['Float'];
+};
+
+
+export type QueryStepArgs = {
+  id: Scalars['Float'];
+};
+
+
+export type QueryExerciseArgs = {
+  id: Scalars['Float'];
+};
+
+
+export type QueryCategoryArgs = {
   id: Scalars['Float'];
 };
 
@@ -36,14 +71,15 @@ export type User = {
   password: Scalars['String'];
   profile: Scalars['String'];
   profilePicture?: Maybe<Scalars['String']>;
-  activeRoutine?: Maybe<Routine>;
-  routines: Array<Routine>;
+  currentActivity?: Maybe<Activity>;
+  activities?: Maybe<Array<Activity>>;
+  categories?: Maybe<Array<Category>>;
   createdAt: Scalars['String'];
   updatedAt: Scalars['String'];
 };
 
-export type Routine = {
-  __typename?: 'Routine';
+export type Activity = {
+  __typename?: 'Activity';
   id: Scalars['Int'];
   name: Scalars['String'];
   assignedBy: User;
@@ -63,7 +99,7 @@ export type Exercise = {
   difficulty: Scalars['String'];
   description?: Maybe<Scalars['String']>;
   options?: Maybe<Scalars['String']>;
-  steps: Array<Step>;
+  steps?: Maybe<Array<Maybe<Step>>>;
   createdAt: Scalars['String'];
   updatedAt: Scalars['String'];
 };
@@ -71,11 +107,53 @@ export type Exercise = {
 export type Step = {
   __typename?: 'Step';
   id: Scalars['Int'];
+  order: Scalars['Float'];
   name: Scalars['String'];
   type: Scalars['String'];
   description?: Maybe<Scalars['String']>;
   options?: Maybe<Scalars['String']>;
   ttl?: Maybe<Scalars['Float']>;
+  dialogs?: Maybe<Array<Maybe<Dialog>>>;
+  createdAt: Scalars['String'];
+  updatedAt: Scalars['String'];
+};
+
+export type Dialog = {
+  __typename?: 'Dialog';
+  id: Scalars['Int'];
+  order: Scalars['Float'];
+  name: Scalars['String'];
+  data: Scalars['String'];
+  type: Scalars['String'];
+  answerType: Scalars['String'];
+  description?: Maybe<Scalars['String']>;
+  options?: Maybe<Scalars['String']>;
+  drawData?: Maybe<Scalars['String']>;
+  answers?: Maybe<Array<Maybe<Answer>>>;
+  createdAt: Scalars['String'];
+  updatedAt: Scalars['String'];
+};
+
+export type Answer = {
+  __typename?: 'Answer';
+  id: Scalars['Int'];
+  data: Scalars['String'];
+  isCorrect: Scalars['Boolean'];
+  type: Scalars['String'];
+  drawData?: Maybe<Scalars['String']>;
+  createdAt: Scalars['String'];
+  updatedAt: Scalars['String'];
+};
+
+export type Category = {
+  __typename?: 'Category';
+  id: Scalars['Int'];
+  name: Scalars['String'];
+  isPublic: Scalars['Boolean'];
+  creatorId: Scalars['Float'];
+  description?: Maybe<Scalars['String']>;
+  options?: Maybe<Scalars['String']>;
+  exercises?: Maybe<Array<Maybe<Exercise>>>;
   createdAt: Scalars['String'];
   updatedAt: Scalars['String'];
 };
@@ -89,6 +167,23 @@ export type Mutation = {
   updateUser: UserResponse;
   forgotPassword: Scalars['Boolean'];
   changePassword: UserResponse;
+  createAnswer: AnswerResponse;
+  updateAnswer: AnswerResponse;
+  deleteAnswer: Scalars['Boolean'];
+  createDialog: DialogResponse;
+  updateDialog: DialogResponse;
+  deleteDialog: Scalars['Boolean'];
+  createStep: StepResponse;
+  updateStep: StepResponse;
+  deleteStep: Scalars['Boolean'];
+  createExercise: ExerciseResponse;
+  updateExercise: ExerciseResponse;
+  deleteExercise: Scalars['Boolean'];
+  updateSteps: Scalars['Boolean'];
+  createCategory: CategoryResponse;
+  updateCategory: CategoryResponse;
+  deleteCategory: Scalars['Boolean'];
+  updateExercises: Scalars['Boolean'];
 };
 
 
@@ -124,6 +219,99 @@ export type MutationChangePasswordArgs = {
   newPassword: Scalars['String'];
 };
 
+
+export type MutationCreateAnswerArgs = {
+  answerData: AnswerData;
+  dialogId: Scalars['Float'];
+};
+
+
+export type MutationUpdateAnswerArgs = {
+  answerData: AnswerData;
+};
+
+
+export type MutationDeleteAnswerArgs = {
+  id: Scalars['Float'];
+};
+
+
+export type MutationCreateDialogArgs = {
+  dialogData: DialogData;
+  stepId: Scalars['Float'];
+};
+
+
+export type MutationUpdateDialogArgs = {
+  dialogData: DialogData;
+};
+
+
+export type MutationDeleteDialogArgs = {
+  id: Scalars['Float'];
+};
+
+
+export type MutationCreateStepArgs = {
+  stepData: StepData;
+  exerciseId: Scalars['Float'];
+};
+
+
+export type MutationUpdateStepArgs = {
+  stepData: StepData;
+};
+
+
+export type MutationDeleteStepArgs = {
+  id: Scalars['Float'];
+};
+
+
+export type MutationCreateExerciseArgs = {
+  exerciseData: ExerciseData;
+  categoryId: Scalars['Float'];
+};
+
+
+export type MutationUpdateExerciseArgs = {
+  exerciseData: ExerciseData;
+};
+
+
+export type MutationDeleteExerciseArgs = {
+  id: Scalars['Float'];
+};
+
+
+export type MutationUpdateStepsArgs = {
+  added: UpdatedSteps;
+  removed: UpdatedSteps;
+  exerciseId: Scalars['Float'];
+};
+
+
+export type MutationCreateCategoryArgs = {
+  categoryData: CategoryData;
+};
+
+
+export type MutationUpdateCategoryArgs = {
+  categoryData: CategoryData;
+};
+
+
+export type MutationDeleteCategoryArgs = {
+  id: Scalars['Float'];
+};
+
+
+export type MutationUpdateExercisesArgs = {
+  added: UpdatedExercises;
+  removed: UpdatedExercises;
+  categoryId: Scalars['Float'];
+};
+
 export type UserResponse = {
   __typename?: 'UserResponse';
   errors?: Maybe<Array<Error>>;
@@ -146,6 +334,94 @@ export type RegisterUserData = {
 export type LoginData = {
   email: Scalars['String'];
   password: Scalars['String'];
+};
+
+export type AnswerResponse = {
+  __typename?: 'AnswerResponse';
+  errors?: Maybe<Array<Error>>;
+  answer?: Maybe<Answer>;
+};
+
+export type AnswerData = {
+  id?: Maybe<Scalars['Float']>;
+  data?: Maybe<Scalars['String']>;
+  drawData?: Maybe<Scalars['String']>;
+  type?: Maybe<Scalars['String']>;
+  isCorrect?: Maybe<Scalars['Boolean']>;
+};
+
+export type DialogResponse = {
+  __typename?: 'DialogResponse';
+  errors?: Maybe<Array<Error>>;
+  dialog?: Maybe<Dialog>;
+};
+
+export type DialogData = {
+  id?: Maybe<Scalars['Float']>;
+  order?: Maybe<Scalars['Float']>;
+  name?: Maybe<Scalars['String']>;
+  options?: Maybe<Scalars['String']>;
+  description?: Maybe<Scalars['String']>;
+  data?: Maybe<Scalars['String']>;
+  drawData?: Maybe<Scalars['String']>;
+  type?: Maybe<Scalars['String']>;
+  answerType?: Maybe<Scalars['String']>;
+  answers?: Maybe<Array<AnswerData>>;
+};
+
+export type StepResponse = {
+  __typename?: 'StepResponse';
+  errors?: Maybe<Array<Error>>;
+  step?: Maybe<Step>;
+};
+
+export type StepData = {
+  id?: Maybe<Scalars['Float']>;
+  order?: Maybe<Scalars['Float']>;
+  name?: Maybe<Scalars['String']>;
+  options?: Maybe<Scalars['String']>;
+  description?: Maybe<Scalars['String']>;
+  ttl?: Maybe<Scalars['Float']>;
+  type?: Maybe<Scalars['String']>;
+  dialogs?: Maybe<Array<DialogData>>;
+};
+
+export type ExerciseResponse = {
+  __typename?: 'ExerciseResponse';
+  errors?: Maybe<Array<Error>>;
+  exercise?: Maybe<Exercise>;
+};
+
+export type ExerciseData = {
+  id?: Maybe<Scalars['Float']>;
+  name?: Maybe<Scalars['String']>;
+  options?: Maybe<Scalars['String']>;
+  description?: Maybe<Scalars['String']>;
+  difficulty?: Maybe<Scalars['String']>;
+  steps?: Maybe<Array<StepData>>;
+};
+
+export type UpdatedSteps = {
+  ids?: Maybe<Array<Scalars['Int']>>;
+};
+
+export type CategoryResponse = {
+  __typename?: 'CategoryResponse';
+  errors?: Maybe<Array<Error>>;
+  category?: Maybe<Category>;
+};
+
+export type CategoryData = {
+  id?: Maybe<Scalars['Float']>;
+  name?: Maybe<Scalars['String']>;
+  options?: Maybe<Scalars['String']>;
+  description?: Maybe<Scalars['String']>;
+  isPublic?: Maybe<Scalars['Boolean']>;
+  exercises?: Maybe<Array<ExerciseData>>;
+};
+
+export type UpdatedExercises = {
+  ids?: Maybe<Array<Scalars['Int']>>;
 };
 
 export type RegularErrorFragment = (

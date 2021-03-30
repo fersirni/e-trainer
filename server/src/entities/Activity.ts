@@ -17,7 +17,7 @@ import { Exercise } from "./Exercise";
 
 @ObjectType()
 @Entity()
-export class Routine extends BaseEntity {
+export class Activity extends BaseEntity {
   @Field(() => Int)
   @PrimaryGeneratedColumn()
   id!: number;
@@ -43,7 +43,7 @@ export class Routine extends BaseEntity {
   @Column({ nullable: true })
   description?: string;
 
-  @ManyToOne(() => User, (user) => user.routines)
+  @ManyToOne(() => User, (user) => user.activities)
   user: User;
 
   @Field(() => [Exercise])

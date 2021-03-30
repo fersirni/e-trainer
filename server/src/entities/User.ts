@@ -12,7 +12,7 @@ import {
   JoinTable,
 } from "typeorm";
 import { ObjectType, Field, Int } from "type-graphql";
-import { Routine } from "./Routine";
+import { Activity } from "./Activity";
 import { Category } from "./Category";
 
 @ObjectType()
@@ -43,13 +43,13 @@ export class User extends BaseEntity {
   profilePicture?: string;
 
   @Field({ nullable: true })
-  @OneToOne(() => Routine)
+  @OneToOne(() => Activity)
   @JoinColumn()
-  activeRoutine?: Routine;
+  currentActivity?: Activity;
 
-  @Field(() => [Routine], { nullable: true })
-  @OneToMany(() => Routine, (routine) => routine.user)
-  routines: Routine[];
+  @Field(() => [Activity], { nullable: true })
+  @OneToMany(() => Activity, (activity) => activity.user)
+  activities: Activity[];
 
   @Field(() => [Category], { nullable: true })
   @ManyToMany(() => Category, { cascade: true, eager: true })
