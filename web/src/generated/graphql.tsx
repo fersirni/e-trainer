@@ -473,6 +473,16 @@ export type ChangePasswordMutation = (
   ) }
 );
 
+export type DeleteCategoryMutationVariables = Exact<{
+  id: Scalars['Float'];
+}>;
+
+
+export type DeleteCategoryMutation = (
+  { __typename?: 'Mutation' }
+  & Pick<Mutation, 'deleteCategory'>
+);
+
 export type ForgotPasswordMutationVariables = Exact<{
   email: Scalars['String'];
 }>;
@@ -636,6 +646,15 @@ export const ChangePasswordDocument = gql`
 
 export function useChangePasswordMutation() {
   return Urql.useMutation<ChangePasswordMutation, ChangePasswordMutationVariables>(ChangePasswordDocument);
+};
+export const DeleteCategoryDocument = gql`
+    mutation DeleteCategory($id: Float!) {
+  deleteCategory(id: $id)
+}
+    `;
+
+export function useDeleteCategoryMutation() {
+  return Urql.useMutation<DeleteCategoryMutation, DeleteCategoryMutationVariables>(DeleteCategoryDocument);
 };
 export const ForgotPasswordDocument = gql`
     mutation ForgotPassword($email: String!) {

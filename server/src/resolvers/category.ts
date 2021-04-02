@@ -111,12 +111,12 @@ export class CategoryResolver {
     }
     return fieldsToUpdate;
   }
-
+  @UseMiddleware(isAuth)
   @Query(() => Category, { nullable: true })
   category(@Arg("id") id: number): Promise<Category | undefined> {
     return Category.findOne(id, { relations: ["exercises"] });
   }
-
+  @UseMiddleware(isAuth)
   @Query(() => [Category])
   async categories(): Promise<Category[]> {
     return Category.find({ relations: ["exercises"], order: { name: "ASC"} });
