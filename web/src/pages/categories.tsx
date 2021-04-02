@@ -5,7 +5,7 @@ import {
   Center,
   Heading,
   Icon,
-  Skeleton,
+  Spinner,
   Table,
   TableCaption,
   Tbody,
@@ -24,30 +24,18 @@ import { withUrqlClient } from "next-urql";
 import { AdminBar } from "../components/AdminBar";
 import { TiTrash } from "react-icons/ti";
 import { useRouter } from "next/router";
+import { showError } from "../utils/showError";
 
 interface categoriesProps {}
-const NOT_AUTHENTICATED_MESSAGE = "Not authenticated";
 
 const Categories: React.FC<categoriesProps> = ({}) => {
   const [{}, deleteCategory] = useDeleteCategoryMutation();
   const [{ data, fetching, error }] = useCategoriesQuery();
   const [categories, setCategories] = React.useState(data?.categories);
-  const router = useRouter();
   const toast = useToast();
-  if (error) {
-    console.log(error.message);
-    if (error.message.includes(NOT_AUTHENTICATED_MESSAGE)) {
-      router.push("/");
-    }
-    toast({
-      title: "Ups! Something went wrong :(",
-      description: error.message,
-      status: "error",
-      duration: 5000,
-      isClosable: true,
-    });
-  }
-  
+  const router = useRouter();
+  showError(error, toast, router);
+
   if (!categories) {
     if (fetching) {
     } else if (data?.categories) {
@@ -62,7 +50,22 @@ const Categories: React.FC<categoriesProps> = ({}) => {
         return category.id !== id;
       });
       setCategories(updatedCategories);
+    } else {
+      toast({
+        title: "Ups! Something went wrong :(",
+        description: "Error while deleting category",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     }
+    toast({
+      title: "Success",
+      description: "Category deleted!",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    });
   };
 
   const formatCategories = (c: any) => {
@@ -91,6 +94,9 @@ const Categories: React.FC<categoriesProps> = ({}) => {
 
   const emptyBody = (
     <>
+      <Table size="lg">
+        <Thead>{headers}</Thead>
+      </Table>
       <Center mt={32}>
         <Box>No Categories Found</Box>
       </Center>
@@ -118,19 +124,20 @@ const Categories: React.FC<categoriesProps> = ({}) => {
     </Tr>
   ));
 
-  const skeletonArray = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-  const skeleton = skeletonArray.map((n) => (
-    <Skeleton key={n} mt="1" height="30px" />
-  ));
-
   const table = fetching ? (
     <>
       <Table size="lg">
         <Thead>{headers}</Thead>
       </Table>
-      <Box padding="6" boxShadow="lg">
-        {skeleton}
-      </Box>
+      <Center mt={32}>
+        <Spinner
+          thickness="4px"
+          speed="0.65s"
+          emptyColor="gray.200"
+          color="blue.500"
+          size="xl"
+        />
+      </Center>
     </>
   ) : categories && categories.length > 0 ? (
     <Table size="lg">
