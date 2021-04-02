@@ -424,6 +424,15 @@ export type UpdatedExercises = {
   ids?: Maybe<Array<Scalars['Int']>>;
 };
 
+export type RegularCategoryFragment = (
+  { __typename?: 'Category' }
+  & Pick<Category, 'id' | 'name' | 'description' | 'options' | 'creatorId' | 'isPublic'>
+  & { exercises?: Maybe<Array<Maybe<(
+    { __typename?: 'Exercise' }
+    & SimpleExerciseFragment
+  )>>> }
+);
+
 export type RegularErrorFragment = (
   { __typename?: 'Error' }
   & Pick<Error, 'message' | 'field' | 'key' | 'entity'>
@@ -443,6 +452,11 @@ export type RegularUserResponseFragment = (
     { __typename?: 'Error' }
     & RegularErrorFragment
   )>> }
+);
+
+export type SimpleExerciseFragment = (
+  { __typename?: 'Exercise' }
+  & Pick<Exercise, 'id' | 'name' | 'description' | 'options' | 'difficulty'>
 );
 
 export type ChangePasswordMutationVariables = Exact<{
@@ -530,6 +544,17 @@ export type UpdateUserMutation = (
   ) }
 );
 
+export type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type CategoriesQuery = (
+  { __typename?: 'Query' }
+  & { categories: Array<(
+    { __typename?: 'Category' }
+    & RegularCategoryFragment
+  )> }
+);
+
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -553,6 +578,28 @@ export type UsersQuery = (
   )> }
 );
 
+export const SimpleExerciseFragmentDoc = gql`
+    fragment SimpleExercise on Exercise {
+  id
+  name
+  description
+  options
+  difficulty
+}
+    `;
+export const RegularCategoryFragmentDoc = gql`
+    fragment RegularCategory on Category {
+  id
+  name
+  description
+  options
+  creatorId
+  isPublic
+  exercises {
+    ...SimpleExercise
+  }
+}
+    ${SimpleExerciseFragmentDoc}`;
 export const RegularUserFragmentDoc = gql`
     fragment RegularUser on User {
   _id
@@ -651,6 +698,17 @@ export const UpdateUserDocument = gql`
 
 export function useUpdateUserMutation() {
   return Urql.useMutation<UpdateUserMutation, UpdateUserMutationVariables>(UpdateUserDocument);
+};
+export const CategoriesDocument = gql`
+    query Categories {
+  categories {
+    ...RegularCategory
+  }
+}
+    ${RegularCategoryFragmentDoc}`;
+
+export function useCategoriesQuery(options: Omit<Urql.UseQueryArgs<CategoriesQueryVariables>, 'query'> = {}) {
+  return Urql.useQuery<CategoriesQuery>({ query: CategoriesDocument, ...options });
 };
 export const MeDocument = gql`
     query Me {

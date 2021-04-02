@@ -1,0 +1,7 @@
+fragment SimpleExercise on Exercise {
+    id
+    name
+    description
+    options
+    difficulty
+}

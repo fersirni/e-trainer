@@ -118,8 +118,8 @@ export class CategoryResolver {
   }
 
   @Query(() => [Category])
-  categories(): Promise<Category[]> {
-    return Category.find({ relations: ["exercises"] });
+  async categories(): Promise<Category[]> {
+    return Category.find({ relations: ["exercises"], order: { name: "ASC"} });
   }
 
   @Mutation(() => CategoryResponse)
