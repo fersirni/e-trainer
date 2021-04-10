@@ -22,18 +22,20 @@ import { ExerciseResolver } from "./resolvers/exercise";
 import { StepResolver } from "./resolvers/step";
 import { DialogResolver } from "./resolvers/dialog";
 import { AnswerResolver } from "./resolvers/answer";
+import path from 'path';
 
 const main = async () => {
-  await createConnection({
+  const conn = await createConnection({
     type: "postgres",
     database: "e-trainer",
     username: "postgres",
     password: "postgres",
     logging: true,
     synchronize: true,
+    migrations: [path.join(__dirname, "./migrations/*")],
     entities: [User, Activity, Category, Exercise, Step, Dialog, Answer],
   });
-
+  await conn.runMigrations();
   const app = express();
 
   const RedisStore = connectRedis(session);
