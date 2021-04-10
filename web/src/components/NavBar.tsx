@@ -19,7 +19,7 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
     }
   }
   return (
-    <Flex bg="#24292e" p={4}>
+    <Flex zIndex={1} position="sticky" top={0} bg="#24292e" p={4}>
       <Box>
         <Center>
           <WrapItem>
