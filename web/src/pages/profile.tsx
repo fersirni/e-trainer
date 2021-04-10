@@ -29,10 +29,12 @@ import { useRouter } from "next/router";
 import { createUrqlClient } from "../utils/createUrqlClient";
 import { withUrqlClient } from "next-urql";
 import { isServer } from "../utils/isServer";
+import { useIsAuth } from "../utils/useIsAuth";
 
 interface profileProps {}
 
 const Profile: React.FC<profileProps> = ({}) => {
+  useIsAuth();
   const router = useRouter();
   const [{ data: currentUserData, fetching }] = useMeQuery({
     pause: isServer(),
@@ -41,9 +43,10 @@ const Profile: React.FC<profileProps> = ({}) => {
   const [{}, updateUser] = useUpdateUserMutation();
   const [{}, unregister] = useUnregisterMutation();
   const [, forgotPassword] = useForgotPasswordMutation();
-
+  
   const { isOpen, onOpen, onClose } = useDisclosure();
   const cancelRef = React.useRef();
+  
   const handleSubmit = async (values: any, { setErrors }: any) => {
     values.id = currentUserData?.me?._id;
     const response = await updateUser(values);
@@ -53,6 +56,7 @@ const Profile: React.FC<profileProps> = ({}) => {
       router.push("/");
     }
   };
+  
   const handleUnregister = async () => {
     const id = currentUserData?.me?._id;
     if (id) {
@@ -90,6 +94,7 @@ const Profile: React.FC<profileProps> = ({}) => {
     }
     return error;
   };
+
   const validateEmail = (email?: string) => {
     let emailError;
     if (!email) {
@@ -99,6 +104,7 @@ const Profile: React.FC<profileProps> = ({}) => {
     }
     return emailError;
   };
+
   let body = null;
   if (fetching) {
   } else if (currentUserData?.me) {

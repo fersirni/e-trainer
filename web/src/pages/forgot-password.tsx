@@ -4,6 +4,8 @@ import {
   Center,
   Button,
   useToast,
+  Heading,
+  Box,
 } from "@chakra-ui/react";
 import { Form, Formik } from "formik";
 import { withUrqlClient } from "next-urql";
@@ -14,7 +16,6 @@ import { Wrapper } from "../components/Wrapper";
 import { useForgotPasswordMutation } from "../generated/graphql";
 import { createUrqlClient } from "../utils/createUrqlClient";
 
-
 interface ForgotPasswordProps {}
 
 const ForgotPassword: React.FC<ForgotPasswordProps> = ({}) => {
@@ -24,6 +25,14 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({}) => {
   return (
     <>
       <Wrapper variant="small">
+        <Center>
+          <Heading paddingBottom={16} paddingTop={16} mb={4} size="lg">
+            Forgot your password?
+          </Heading>
+        </Center>
+          <Box paddingBottom={8}>
+            Don't worry it happens all the time, we'll send you and email to recover your password!!
+          </Box>
         <Formik
           initialValues={{ email: "" }}
           onSubmit={async ({ email }) => {
@@ -53,8 +62,8 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({}) => {
             <Form>
               <InputField
                 name="email"
-                label="Email"
-                placeholder="example@email.com"
+                label="Please enter your email"
+                placeholder="my@email.com"
               />
               <Wrap mt={10} spacing="30px" justify="center">
                 <WrapItem>

@@ -16,10 +16,12 @@ import { createUrqlClient } from "../utils/createUrqlClient";
 import { withUrqlClient } from "next-urql";
 import { AdminBar } from "../components/AdminBar";
 import { TiTrash } from "react-icons/ti";
+import { useIsAuth } from "../utils/useIsAuth";
 
 interface usersProps {}
 
 const Users: React.FC<usersProps> = ({}) => {
+  useIsAuth();
   const [{}, unregister] = useUnregisterMutation();
   const [{ data, fetching }] = useUsersQuery();
   const [users, setUsers] = React.useState(data?.users);

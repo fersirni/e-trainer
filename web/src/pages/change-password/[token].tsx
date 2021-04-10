@@ -12,22 +12,27 @@ import {
   Image,
   InputRightElement,
   useToast,
+  Link,
+  Flex,
 } from "@chakra-ui/react";
 import { Formik, Form, Field } from "formik";
 import { withUrqlClient } from "next-urql";
 import { createUrqlClient } from "../../utils/createUrqlClient";
 import { NextPage } from "next";
+import NextLink from "next/link";
 import { useRouter } from "next/router";
 import { Wrapper } from "../../components/Wrapper";
 import { useChangePasswordMutation } from "../../generated/graphql";
 import { toErrorMap } from "../../utils/toErrorMap";
 
-const ChangePassword: NextPage<{ token: string }> = ({ token }) => {
+const ChangePassword: NextPage = () => {
   const router = useRouter();
   const toast = useToast();
   const [show, setShow] = React.useState(false);
   const [, changePassword] = useChangePasswordMutation();
   const handleClick = () => setShow(!show);
+  const token =
+    typeof router.query.token === "string" ? router.query.token : "";
   const handleSubmit = async (values: any, { setErrors }: any) => {
     const response = await changePassword({
       newPassword: values.newPassword,
@@ -93,6 +98,11 @@ const ChangePassword: NextPage<{ token: string }> = ({ token }) => {
                         type={show ? "text" : "password"}
                         placeholder="Enter new password"
                       />
+                      <Flex mt={2}>
+                        <NextLink href="/forgot-password">
+                          <Link ml="auto">token expired?</Link>
+                        </NextLink>
+                      </Flex>
                       <InputRightElement width="4.5rem">
                         <Button h="1.75rem" size="sm" onClick={handleClick}>
                           {show ? "Hide" : "Show"}
@@ -141,10 +151,4 @@ const ChangePassword: NextPage<{ token: string }> = ({ token }) => {
   );
 };
 
-ChangePassword.getInitialProps = ({ query }) => {
-  return {
-    token: query.token as string,
-  };
-};
-
-export default withUrqlClient(createUrqlClient)(ChangePassword as any );
+export default withUrqlClient(createUrqlClient)(ChangePassword as any);
