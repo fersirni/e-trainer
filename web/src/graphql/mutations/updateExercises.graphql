@@ -1,0 +1,3 @@
+mutation UpdateExercises($categoryId: Int!, $updated: UpdatedExercises!) {
+  updateExercises(categoryId: $categoryId, updated: $updated)
+}

@@ -24,6 +24,10 @@ export class Exercise extends BaseEntity {
   name!: string;
 
   @Field()
+  @Column()
+  creatorId!: number;
+
+  @Field()
   @Column({ default: "easy" })
   difficulty!: string;
 
@@ -37,6 +41,7 @@ export class Exercise extends BaseEntity {
 
   @ManyToOne(() => Category, (category) => category.exercises, {
     onDelete: "CASCADE",
+    nullable: true
   })
   category: Category;
 

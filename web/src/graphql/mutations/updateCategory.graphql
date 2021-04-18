@@ -1,0 +1,5 @@
+mutation UpdateCategory($categoryData: CategoryData!) {
+  updateCategory(categoryData: $categoryData) {
+    ...RegularCategoryResponse
+  }
+}

@@ -1,5 +1,16 @@
-query Categories {
-  categories {
-    ...RegularCategory
+query Categories($limit: Int!, $cursor: String, $searchName: String) {
+  categories(limit: $limit, cursor: $cursor, searchName: $searchName) {
+    hasMore
+    categories {
+      id
+      name
+      shortDescription
+      creatorId
+      isPublic
+      updatedAt
+      exercises {
+        id
+      }
+    }
   }
 }

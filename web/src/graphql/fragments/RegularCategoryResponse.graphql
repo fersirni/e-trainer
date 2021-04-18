@@ -1,0 +1,8 @@
+fragment RegularCategoryResponse on CategoryResponse {
+    category {
+        ...RegularCategory
+    }
+    errors {
+        ...RegularError
+    }
+}

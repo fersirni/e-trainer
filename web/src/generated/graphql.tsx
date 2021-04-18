@@ -30,7 +30,7 @@ export type Query = {
   exercise?: Maybe<Exercise>;
   exercises: Array<Exercise>;
   category?: Maybe<Category>;
-  categories: Array<Category>;
+  categories: PaginatedCategories;
 };
 
 
@@ -59,8 +59,20 @@ export type QueryExerciseArgs = {
 };
 
 
+export type QueryExercisesArgs = {
+  searchName?: Maybe<Scalars['String']>;
+};
+
+
 export type QueryCategoryArgs = {
-  id: Scalars['Float'];
+  id: Scalars['Int'];
+};
+
+
+export type QueryCategoriesArgs = {
+  cursor?: Maybe<Scalars['String']>;
+  searchName?: Maybe<Scalars['String']>;
+  limit: Scalars['Int'];
 };
 
 export type User = {
@@ -96,6 +108,7 @@ export type Exercise = {
   __typename?: 'Exercise';
   id: Scalars['Int'];
   name: Scalars['String'];
+  creatorId: Scalars['Float'];
   difficulty: Scalars['String'];
   description?: Maybe<Scalars['String']>;
   options?: Maybe<Scalars['String']>;
@@ -156,6 +169,13 @@ export type Category = {
   exercises?: Maybe<Array<Maybe<Exercise>>>;
   createdAt: Scalars['String'];
   updatedAt: Scalars['String'];
+  shortDescription: Scalars['String'];
+};
+
+export type PaginatedCategories = {
+  __typename?: 'PaginatedCategories';
+  categories: Array<Category>;
+  hasMore: Scalars['Boolean'];
 };
 
 export type Mutation = {
@@ -307,9 +327,8 @@ export type MutationDeleteCategoryArgs = {
 
 
 export type MutationUpdateExercisesArgs = {
-  added: UpdatedExercises;
-  removed: UpdatedExercises;
-  categoryId: Scalars['Float'];
+  updated: UpdatedExercises;
+  categoryId: Scalars['Int'];
 };
 
 export type UserResponse = {
@@ -395,6 +414,7 @@ export type ExerciseResponse = {
 export type ExerciseData = {
   id?: Maybe<Scalars['Float']>;
   name?: Maybe<Scalars['String']>;
+  creatorId?: Maybe<Scalars['Float']>;
   options?: Maybe<Scalars['String']>;
   description?: Maybe<Scalars['String']>;
   difficulty?: Maybe<Scalars['String']>;
@@ -421,7 +441,8 @@ export type CategoryData = {
 };
 
 export type UpdatedExercises = {
-  ids?: Maybe<Array<Scalars['Int']>>;
+  added?: Maybe<Array<Scalars['Int']>>;
+  removed?: Maybe<Array<Scalars['Int']>>;
 };
 
 export type RegularCategoryFragment = (
@@ -431,6 +452,17 @@ export type RegularCategoryFragment = (
     { __typename?: 'Exercise' }
     & SimpleExerciseFragment
   )>>> }
+);
+
+export type RegularCategoryResponseFragment = (
+  { __typename?: 'CategoryResponse' }
+  & { category?: Maybe<(
+    { __typename?: 'Category' }
+    & RegularCategoryFragment
+  )>, errors?: Maybe<Array<(
+    { __typename?: 'Error' }
+    & RegularErrorFragment
+  )>> }
 );
 
 export type RegularErrorFragment = (
@@ -456,7 +488,7 @@ export type RegularUserResponseFragment = (
 
 export type SimpleExerciseFragment = (
   { __typename?: 'Exercise' }
-  & Pick<Exercise, 'id' | 'name' | 'description' | 'options' | 'difficulty'>
+  & Pick<Exercise, 'id' | 'name'>
 );
 
 export type ChangePasswordMutationVariables = Exact<{
@@ -539,6 +571,30 @@ export type UnregisterMutation = (
   & Pick<Mutation, 'unregister'>
 );
 
+export type UpdateCategoryMutationVariables = Exact<{
+  categoryData: CategoryData;
+}>;
+
+
+export type UpdateCategoryMutation = (
+  { __typename?: 'Mutation' }
+  & { updateCategory: (
+    { __typename?: 'CategoryResponse' }
+    & RegularCategoryResponseFragment
+  ) }
+);
+
+export type UpdateExercisesMutationVariables = Exact<{
+  categoryId: Scalars['Int'];
+  updated: UpdatedExercises;
+}>;
+
+
+export type UpdateExercisesMutation = (
+  { __typename?: 'Mutation' }
+  & Pick<Mutation, 'updateExercises'>
+);
+
 export type UpdateUserMutationVariables = Exact<{
   id: Scalars['Float'];
   email: Scalars['String'];
@@ -554,14 +610,52 @@ export type UpdateUserMutation = (
   ) }
 );
 
-export type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
+export type CategoriesQueryVariables = Exact<{
+  limit: Scalars['Int'];
+  cursor?: Maybe<Scalars['String']>;
+  searchName?: Maybe<Scalars['String']>;
+}>;
 
 
 export type CategoriesQuery = (
   { __typename?: 'Query' }
-  & { categories: Array<(
+  & { categories: (
+    { __typename?: 'PaginatedCategories' }
+    & Pick<PaginatedCategories, 'hasMore'>
+    & { categories: Array<(
+      { __typename?: 'Category' }
+      & Pick<Category, 'id' | 'name' | 'shortDescription' | 'creatorId' | 'isPublic' | 'updatedAt'>
+      & { exercises?: Maybe<Array<Maybe<(
+        { __typename?: 'Exercise' }
+        & Pick<Exercise, 'id'>
+      )>>> }
+    )> }
+  ) }
+);
+
+export type CategoryQueryVariables = Exact<{
+  id: Scalars['Int'];
+}>;
+
+
+export type CategoryQuery = (
+  { __typename?: 'Query' }
+  & { category?: Maybe<(
     { __typename?: 'Category' }
     & RegularCategoryFragment
+  )> }
+);
+
+export type ExercisesQueryVariables = Exact<{
+  searchName?: Maybe<Scalars['String']>;
+}>;
+
+
+export type ExercisesQuery = (
+  { __typename?: 'Query' }
+  & { exercises: Array<(
+    { __typename?: 'Exercise' }
+    & SimpleExerciseFragment
   )> }
 );
 
@@ -592,9 +686,6 @@ export const SimpleExerciseFragmentDoc = gql`
     fragment SimpleExercise on Exercise {
   id
   name
-  description
-  options
-  difficulty
 }
     `;
 export const RegularCategoryFragmentDoc = gql`
@@ -610,19 +701,30 @@ export const RegularCategoryFragmentDoc = gql`
   }
 }
     ${SimpleExerciseFragmentDoc}`;
-export const RegularUserFragmentDoc = gql`
-    fragment RegularUser on User {
-  _id
-  name
-  email
-}
-    `;
 export const RegularErrorFragmentDoc = gql`
     fragment RegularError on Error {
   message
   field
   key
   entity
+}
+    `;
+export const RegularCategoryResponseFragmentDoc = gql`
+    fragment RegularCategoryResponse on CategoryResponse {
+  category {
+    ...RegularCategory
+  }
+  errors {
+    ...RegularError
+  }
+}
+    ${RegularCategoryFragmentDoc}
+${RegularErrorFragmentDoc}`;
+export const RegularUserFragmentDoc = gql`
+    fragment RegularUser on User {
+  _id
+  name
+  email
 }
     `;
 export const RegularUserResponseFragmentDoc = gql`
@@ -707,6 +809,26 @@ export const UnregisterDocument = gql`
 export function useUnregisterMutation() {
   return Urql.useMutation<UnregisterMutation, UnregisterMutationVariables>(UnregisterDocument);
 };
+export const UpdateCategoryDocument = gql`
+    mutation UpdateCategory($categoryData: CategoryData!) {
+  updateCategory(categoryData: $categoryData) {
+    ...RegularCategoryResponse
+  }
+}
+    ${RegularCategoryResponseFragmentDoc}`;
+
+export function useUpdateCategoryMutation() {
+  return Urql.useMutation<UpdateCategoryMutation, UpdateCategoryMutationVariables>(UpdateCategoryDocument);
+};
+export const UpdateExercisesDocument = gql`
+    mutation UpdateExercises($categoryId: Int!, $updated: UpdatedExercises!) {
+  updateExercises(categoryId: $categoryId, updated: $updated)
+}
+    `;
+
+export function useUpdateExercisesMutation() {
+  return Urql.useMutation<UpdateExercisesMutation, UpdateExercisesMutationVariables>(UpdateExercisesDocument);
+};
 export const UpdateUserDocument = gql`
     mutation UpdateUser($id: Float!, $email: String!, $name: String!) {
   updateUser(id: $id, name: $name, email: $email) {
@@ -719,15 +841,48 @@ export function useUpdateUserMutation() {
   return Urql.useMutation<UpdateUserMutation, UpdateUserMutationVariables>(UpdateUserDocument);
 };
 export const CategoriesDocument = gql`
-    query Categories {
-  categories {
+    query Categories($limit: Int!, $cursor: String, $searchName: String) {
+  categories(limit: $limit, cursor: $cursor, searchName: $searchName) {
+    hasMore
+    categories {
+      id
+      name
+      shortDescription
+      creatorId
+      isPublic
+      updatedAt
+      exercises {
+        id
+      }
+    }
+  }
+}
+    `;
+
+export function useCategoriesQuery(options: Omit<Urql.UseQueryArgs<CategoriesQueryVariables>, 'query'> = {}) {
+  return Urql.useQuery<CategoriesQuery>({ query: CategoriesDocument, ...options });
+};
+export const CategoryDocument = gql`
+    query Category($id: Int!) {
+  category(id: $id) {
     ...RegularCategory
   }
 }
     ${RegularCategoryFragmentDoc}`;
 
-export function useCategoriesQuery(options: Omit<Urql.UseQueryArgs<CategoriesQueryVariables>, 'query'> = {}) {
-  return Urql.useQuery<CategoriesQuery>({ query: CategoriesDocument, ...options });
+export function useCategoryQuery(options: Omit<Urql.UseQueryArgs<CategoryQueryVariables>, 'query'> = {}) {
+  return Urql.useQuery<CategoryQuery>({ query: CategoryDocument, ...options });
+};
+export const ExercisesDocument = gql`
+    query Exercises($searchName: String) {
+  exercises(searchName: $searchName) {
+    ...SimpleExercise
+  }
+}
+    ${SimpleExerciseFragmentDoc}`;
+
+export function useExercisesQuery(options: Omit<Urql.UseQueryArgs<ExercisesQueryVariables>, 'query'> = {}) {
+  return Urql.useQuery<ExercisesQuery>({ query: ExercisesDocument, ...options });
 };
 export const MeDocument = gql`
     query Me {

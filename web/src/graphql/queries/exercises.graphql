@@ -1,0 +1,5 @@
+query Exercises($searchName: String) {
+  exercises(searchName: $searchName) {
+    ...SimpleExercise
+  }
+}

@@ -1,13 +1,21 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Wrapper } from "../components/Wrapper";
 import {
   Box,
+  Button,
   Center,
+  Flex,
   Heading,
   Icon,
+  IconButton,
+  Input,
+  InputGroup,
+  InputRightElement,
+  Link,
+  Spacer,
   Spinner,
   Table,
-  TableCaption,
+  Tag,
   Tbody,
   Td,
   Th,
@@ -23,26 +31,56 @@ import { createUrqlClient } from "../utils/createUrqlClient";
 import { withUrqlClient } from "next-urql";
 import { AdminBar } from "../components/AdminBar";
 import { TiTrash } from "react-icons/ti";
-import { useRouter } from "next/router";
-import { showError } from "../utils/showError";
+import { useIsAuth } from "../utils/useIsAuth";
+import { SearchIcon } from "@chakra-ui/icons";
+import NextLink from "next/link";
 
 interface categoriesProps {}
 
 const Categories: React.FC<categoriesProps> = ({}) => {
-  const [{}, deleteCategory] = useDeleteCategoryMutation();
-  const [{ data, fetching, error }] = useCategoriesQuery();
-  const [categories, setCategories] = React.useState(data?.categories);
+  useIsAuth();
   const toast = useToast();
-  const router = useRouter();
-  showError(error, toast, router);
+  const [value, setValue] = React.useState("");
 
-  if (!categories) {
-    if (fetching) {
-    } else if (data?.categories) {
-      setCategories(data.categories);
+  const [categories, setCategories] = useState([] as any[]);
+  const [variables, setVariables] = useState({
+    limit: 8,
+    cursor: null as null | string,
+    searchName: "",
+  });
+  const [{ data, fetching }] = useCategoriesQuery({ variables });
+  const [{}, deleteCategory] = useDeleteCategoryMutation();
+
+  useEffect(() => {
+    document.title = "Categories";
+    if (!fetching && data?.categories?.categories) {
+      let filtered = categories.concat(data.categories.categories);
+      let existingIds: number[] = [];
+      let cleanIndexes = filtered
+        .map((item, index) => {
+          if (!existingIds.includes(item.id)) {
+            existingIds.push(item.id);
+            return index;
+          }
+          return undefined;
+        })
+        .filter((i) => i !== undefined);
+      filtered = filtered.filter((i, index) => cleanIndexes.includes(index));
+      setCategories(filtered);
     }
-  }
+  }, [fetching, data]);
 
+  const handleSearch = () => {
+    setCategories([]);
+    setVariables({
+      limit: variables.limit,
+      cursor: null,
+      searchName: value,
+    });
+  };
+  const handleChange = (event: any) => {
+    setValue(event.target.value);
+  };
   const handleDelete = async (id: number) => {
     const response = await deleteCategory({ id });
     if (response.data?.deleteCategory && categories) {
@@ -71,7 +109,7 @@ const Categories: React.FC<categoriesProps> = ({}) => {
   const formatCategories = (c: any) => {
     const privacy = c.isPublic ? "public" : "private";
     const quantity = c.exercises ? c.exercises.length : 0;
-    const { id, name, description } = c;
+    const { id, name, shortDescription: description } = c;
     return {
       id,
       name,
@@ -79,6 +117,9 @@ const Categories: React.FC<categoriesProps> = ({}) => {
       privacy,
       quantity,
     };
+  };
+  const privacyColor = (privacy: string) => {
+    return privacy === "public" ? "teal" : "";
   };
 
   const headers = (
@@ -106,19 +147,30 @@ const Categories: React.FC<categoriesProps> = ({}) => {
   const body = (categories || []).map(formatCategories).map((c) => (
     <Tr key={c.id}>
       <Td>{c.id}</Td>
-      <Td>{c.name}</Td>
+      <Td>
+        <NextLink href={`/category/edit/${c.id}`}>
+          <Link>{c.name}</Link>
+        </NextLink>
+      </Td>
       <Td>{c.description}</Td>
-      <Td>{c.privacy}</Td>
+      <Td>
+        <Tag size="sm" colorScheme={privacyColor(c.privacy)}>
+          {c.privacy}
+        </Tag>
+      </Td>
       <Td>{c.quantity}</Td>
       <Td isNumeric>
-        <Icon
-          as={TiTrash}
-          boxSize={6}
+        <IconButton
           onClick={() => {
             if (c.id) {
               handleDelete(c.id);
             }
           }}
+          size="sm"
+          variant="outline"
+          colorScheme="tomato"
+          aria-label="Delete permanently"
+          icon={<Icon as={TiTrash} boxSize={6} />}
         />
       </Td>
     </Tr>
@@ -143,7 +195,6 @@ const Categories: React.FC<categoriesProps> = ({}) => {
     <Table size="lg">
       <Thead>{headers}</Thead>
       <Tbody>{body}</Tbody>
-      <TableCaption>Total: {categories.length}</TableCaption>
     </Table>
   ) : (
     emptyBody
@@ -153,10 +204,56 @@ const Categories: React.FC<categoriesProps> = ({}) => {
     <>
       <AdminBar />
       <Wrapper variant="big">
-        <Heading mb={4} size="lg">
-          Categories
-        </Heading>
+        <Flex>
+          <Heading pb={8} size="lg">
+            Categories
+          </Heading>
+        </Flex>
+        <Flex>
+          <Box mb={8} maxW="xs">
+            <InputGroup>
+              <Input
+                variant="flushed"
+                value={value}
+                onChange={handleChange}
+                placeholder="Search by name"
+              />
+              <InputRightElement width="4.5rem">
+                <Button h="1.75rem" size="sm" onClick={handleSearch}>
+                  <SearchIcon color="gray.300" />
+                </Button>
+              </InputRightElement>
+            </InputGroup>
+          </Box>
+          <Spacer />
+          <Box>
+            <Button colorScheme="teal">Create</Button>
+          </Box>
+        </Flex>
         {table}
+        {data && data.categories?.hasMore ? (
+          <Flex>
+            <Button
+              onClick={() => {
+                const cat = data.categories?.categories;
+                let cursor: string | null = null;
+                if (cat) {
+                  cursor = cat[cat.length - 1].updatedAt;
+                }
+                setVariables({
+                  limit: variables.limit,
+                  cursor,
+                  searchName: value,
+                });
+              }}
+              m="auto"
+              my={8}
+              isLoading={fetching}
+            >
+              Load more
+            </Button>
+          </Flex>
+        ) : null}
       </Wrapper>
     </>
   );

@@ -2,6 +2,7 @@ import { Exercise } from "../entities/Exercise";
 import { DBError, Error, FieldError } from "../utils/Error";
 import {
   Arg,
+  Ctx,
   Field,
   InputType,
   Int,
@@ -15,6 +16,8 @@ import { getConnection } from "typeorm";
 import { isAuth } from "../middleware/isAuth";
 import { Category } from "../entities/Category";
 import { StepData } from "./step";
+import { MyContext } from "../types";
+import { User } from "../entities/User";
 
 const DIFFICULTY_LEVELS = ["easy", "normal", "hard", "very difficult", "god"];
 
@@ -38,6 +41,8 @@ export class ExerciseData {
   id?: number;
   @Field({ nullable: true })
   name?: string;
+  @Field({ nullable: true })
+  creatorId?: number;
   @Field({ nullable: true })
   options?: string;
   @Field({ nullable: true })
@@ -79,9 +84,14 @@ export class ExerciseResolver {
   ): Promise<ExerciseResponse> {
     let errors: Error[] = [];
     let exercise;
-    const { id } = exerciseData;
+    const { id, creatorId } = exerciseData;
     if (!id) {
       errors.push(new FieldError("id", "Cannot find exercise without id"));
+      return { errors };
+    }
+    const creator = await User.findOne(creatorId);
+    if (!creator || creator._id !== creatorId) {
+      errors.push(new FieldError("creatorId", `You don't ahve permissions to update this exercise`));
       return { errors };
     }
     exercise = await Exercise.findOne(id);
@@ -97,7 +107,7 @@ export class ExerciseResolver {
   }
   private getFieldsToUpdate(exercise: Exercise, exerciseData: ExerciseData) {
     let fieldsToUpdate = {};
-    const { name, options, description, difficulty /*, steps*/ } = exerciseData;
+    const { name, options, description, difficulty } = exerciseData;
     if (name && exercise.name !== name) {
       fieldsToUpdate = { ...fieldsToUpdate, name };
     }
@@ -117,15 +127,30 @@ export class ExerciseResolver {
   exercise(@Arg("id") id: number): Promise<Exercise | undefined> {
     return Exercise.findOne(id, { relations: ["steps"] });
   }
-
+  
+  @UseMiddleware(isAuth)
   @Query(() => [Exercise])
-  exercises(): Promise<Exercise[]> {
-    return Exercise.find({ relations: ["steps"] });
-  }
-
+  async exercises(
+    @Ctx() { req }: MyContext,
+    @Arg("searchName", () => String, { nullable: true })
+    searchName: string | null,
+    ): Promise<Exercise[]> {
+      const search: string = searchName || "";
+      const { userId } = req.session || {};
+      const query = `
+        select exercise.* from exercise
+        where exercise."creatorId" = ${userId}
+        and exercise.name LIKE '%${search}%'
+        order by exercise.name;
+        `;
+      return getConnection().query(query);
+      // return Exercise.find({ relations: ["steps"] });
+    } 
+      
   @Mutation(() => ExerciseResponse)
   @UseMiddleware(isAuth)
   async createExercise(
+    @Ctx() { req }: MyContext,
     @Arg("categoryId") categoryId: number,
     @Arg("exerciseData") exerciseData: ExerciseData
   ): Promise<ExerciseResponse> {
@@ -145,6 +170,7 @@ export class ExerciseResolver {
       }
       exercise = await Exercise.create({
         ...exerciseData,
+        creatorId: req.session.userId
       }).save();
       await getConnection()
         .createQueryBuilder()
