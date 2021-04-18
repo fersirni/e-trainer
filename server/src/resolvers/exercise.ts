@@ -4,12 +4,14 @@ import {
   Arg,
   Ctx,
   Field,
+  FieldResolver,
   InputType,
   Int,
   Mutation,
   ObjectType,
   Query,
   Resolver,
+  Root,
   UseMiddleware,
 } from "type-graphql";
 import { getConnection } from "typeorm";
@@ -53,8 +55,16 @@ export class ExerciseData {
   steps?: StepData[];
 }
 
-@Resolver()
+@Resolver(Exercise)
 export class ExerciseResolver {
+  @FieldResolver(() => String, { nullable: true })
+  shortDescription(@Root() root: Exercise) {
+    if (root.description && root.description.length > 40) {
+      return `${root.description?.slice(0, 40)}...`;
+    }
+    return root.description || '(No description found)';
+  }
+
   private validateExerciseData(exerciseData: ExerciseData): Error[] {
     let errors: Error[] = [];
     const {
@@ -221,7 +231,7 @@ export class ExerciseResolver {
 
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth)
-  async deleteExercise(@Arg("id") id: number): Promise<boolean> {
+  async deleteExercise(@Arg("id", () => Int) id: number): Promise<boolean> {
     try {
       await Exercise.delete(id);
       return true;

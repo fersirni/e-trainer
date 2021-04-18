@@ -1,0 +1,5 @@
+mutation CreateCategory($categoryData: CategoryData!) {
+  createCategory(categoryData: $categoryData) {
+    ...RegularCategoryResponse
+  }
+}

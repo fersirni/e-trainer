@@ -1,4 +1,6 @@
 fragment SimpleExercise on Exercise {
     id
     name
+    shortDescription
+    difficulty
 }

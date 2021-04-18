@@ -24,16 +24,7 @@ const Index = () => {
   } else {
     body = (
       <>
-        <NavBar />
-        <div>Hello world</div>
-      <br />
-      {!usersData
-        ? <div>loading...</div>
-        : usersData.users.map((u) => (
-            <div key={u._id}>
-              {u._id} - {u.name}: {u.email}
-            </div>
-          ))}
+       <AdminHome />
       </>
     );
   }

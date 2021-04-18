@@ -24,8 +24,8 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import {
-  useCategoriesQuery,
-  useDeleteCategoryMutation,
+  useDeleteExerciseMutation,
+  useExercisesQuery,
 } from "../generated/graphql";
 import { createUrqlClient } from "../utils/createUrqlClient";
 import { withUrqlClient } from "next-urql";
@@ -36,63 +36,55 @@ import { SearchIcon } from "@chakra-ui/icons";
 import NextLink from "next/link";
 import { useRouter } from "next/router";
 
-interface categoriesProps {}
+interface exercisesProps {}
 
-const Categories: React.FC<categoriesProps> = ({}) => {
+const Exercises: React.FC<exercisesProps> = ({}) => {
   useIsAuth();
   const router = useRouter();
   const toast = useToast();
   const [value, setValue] = React.useState("");
 
-  const [categories, setCategories] = useState([] as any[]);
+  const [exercises, setExercises] = useState([] as any[]);
   const [variables, setVariables] = useState({
-    limit: 8,
-    cursor: null as null | string,
     searchName: "",
   });
-  const [{ data, fetching }] = useCategoriesQuery({ variables });
-  const [{}, deleteCategory] = useDeleteCategoryMutation();
+  const [{ data, fetching }] = useExercisesQuery({ variables });
+  const [{}, deleteExercise] = useDeleteExerciseMutation();
 
   useEffect(() => {
-    document.title = "Categories";
-    if (!fetching && data?.categories?.categories) {
-      let existingIds: number[] = []
-      let filtered = categories
-        .concat(data.categories.categories)
-        .filter((c: any) => {
-          if(!existingIds.includes(c.id)) {
-            existingIds.push(c.id);
-            return true;
-          } else {
-            return false;
-          }
-        });
-      setCategories(filtered);
+    document.title = "Exercises";
+    if (!fetching && data?.exercises) {
+      let existingIds: number[] = [];
+      let filtered = exercises.concat(data.exercises).filter((c: any) => {
+        if (!existingIds.includes(c.id)) {
+          existingIds.push(c.id);
+          return true;
+        } else {
+          return false;
+        }
+      });
+      setExercises(filtered);
     }
   }, [fetching, data]);
 
   const handleSearch = () => {
-    setCategories([]);
-    setVariables({
-      limit: variables.limit,
-      cursor: null,
-      searchName: value,
-    });
+    setExercises([]);
+    setVariables({ searchName: value });
   };
   const handleChange = (event: any) => {
     setValue(event.target.value);
   };
   const handleDelete = async (id: number) => {
-    const response = await deleteCategory({ id });
-    if (response.data?.deleteCategory && categories) {
-      let updatedCategories = categories.filter((category) => {
-        return category.id !== id;
+    const response = await deleteExercise({ id });
+    if (response.data?.deleteExercise && exercises) {
+      let updatedExercises = exercises.filter((exercise) => {
+        return exercise.id !== id;
       });
-      setCategories(updatedCategories);
+      setExercises(updatedExercises);
     } else {
       toast({
         title: "Ups! Something went wrong :(",
-        description: "Error while deleting category",
+        description: "Error while deleting the exercise",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -100,28 +92,35 @@ const Categories: React.FC<categoriesProps> = ({}) => {
     }
     toast({
       title: "Success",
-      description: "Category deleted!",
+      description: "Exercise deleted!",
       status: "success",
       duration: 3000,
       isClosable: true,
     });
   };
 
-  const formatCategories = (c: any) => {
-    const privacy = c.isPublic ? "public" : "private";
-    const quantity = c.exercises ? c.exercises.length : 0;
-    const { id, name, shortDescription: description, creatorId } = c;
-    return {
-      id,
-      name,
-      description,
-      privacy,
-      quantity,
-      creatorId
-    };
-  };
-  const privacyColor = (privacy: string) => {
-    return privacy === "public" ? "teal" : "";
+  const difficultyColor = (level: string) => {
+    let color = "teal";
+    switch (level) {
+      case "easy":
+        color = "green";
+        break;
+      case "normal":
+        color = "blue";
+        break;
+      case "hard":
+        color = "yellow";
+        break;
+      case "very difficult":
+        color = "red";
+        break;
+      case "god":
+        color = "white";
+        break;
+      default:
+        break;
+    }
+    return color;
   };
 
   const headers = (
@@ -129,9 +128,7 @@ const Categories: React.FC<categoriesProps> = ({}) => {
       <Th>Id</Th>
       <Th>Name</Th>
       <Th>Description</Th>
-      <Th>Privacy</Th>
-      <Th>Exercises</Th>
-      <Th>Creator Id</Th>
+      <Th>Difficulty</Th>
       <Th isNumeric>Actions</Th>
     </Tr>
   );
@@ -143,8 +140,8 @@ const Categories: React.FC<categoriesProps> = ({}) => {
       </Table>
       <Center mt={32}>
         <Box>
-          No Categories Found.
-          <NextLink href="/category/create">
+          No Exercises Found.
+          <NextLink href="/exercise/create">
             <Link>Go create one!</Link>
           </NextLink>
         </Box>
@@ -152,27 +149,25 @@ const Categories: React.FC<categoriesProps> = ({}) => {
     </>
   );
 
-  const body = (categories || []).map(formatCategories).map((c) => (
-    <Tr key={c.id}>
-      <Td>{c.id}</Td>
+  const body = (exercises || []).map((e) => (
+    <Tr key={e.id}>
+      <Td>{e.id}</Td>
       <Td>
-        <NextLink href={`/category/edit/${c.id}`}>
-          <Link>{c.name}</Link>
+        <NextLink href={`/exercise/edit/${e.id}`}>
+          <Link>{e.name}</Link>
         </NextLink>
       </Td>
-      <Td>{c.description}</Td>
+      <Td>{e.shortDescription}</Td>
       <Td>
-        <Tag size="sm" colorScheme={privacyColor(c.privacy)}>
-          {c.privacy}
+        <Tag size="sm" colorScheme={difficultyColor(e.difficulty)}>
+          {e.difficulty}
         </Tag>
       </Td>
-      <Td>{c.quantity}</Td>
-      <Td>{c.creatorId}</Td>
       <Td isNumeric>
         <IconButton
           onClick={() => {
-            if (c.id) {
-              handleDelete(c.id);
+            if (e.id) {
+              handleDelete(e.id);
             }
           }}
           size="sm"
@@ -200,7 +195,7 @@ const Categories: React.FC<categoriesProps> = ({}) => {
         />
       </Center>
     </>
-  ) : categories && categories.length > 0 ? (
+  ) : exercises && exercises.length > 0 ? (
     <Table size="lg">
       <Thead>{headers}</Thead>
       <Tbody>{body}</Tbody>
@@ -215,7 +210,7 @@ const Categories: React.FC<categoriesProps> = ({}) => {
       <Wrapper variant="big">
         <Flex>
           <Heading pb={8} size="lg">
-            Categories
+            Exercises
           </Heading>
         </Flex>
         <Flex>
@@ -236,36 +231,18 @@ const Categories: React.FC<categoriesProps> = ({}) => {
           </Box>
           <Spacer />
           <Box mr={8}>
-            <Button colorScheme="teal" onClick={() => router.push('/category/create') } >Create</Button>
+            <Button
+              colorScheme="teal"
+              onClick={() => router.push("/exercise/create")}
+            >
+              Create
+            </Button>
           </Box>
         </Flex>
         {table}
-        {data && data.categories?.hasMore ? (
-          <Flex>
-            <Button
-              onClick={() => {
-                const cat = data.categories?.categories;
-                let cursor: string | null = null;
-                if (cat) {
-                  cursor = cat[cat.length - 1].updatedAt;
-                }
-                setVariables({
-                  limit: variables.limit,
-                  cursor,
-                  searchName: value,
-                });
-              }}
-              m="auto"
-              my={8}
-              isLoading={fetching}
-            >
-              Load more
-            </Button>
-          </Flex>
-        ) : null}
       </Wrapper>
     </>
   );
 };
 
-export default withUrqlClient(createUrqlClient)(Categories);
+export default withUrqlClient(createUrqlClient)(Exercises);

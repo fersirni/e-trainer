@@ -63,9 +63,12 @@ class PaginatedCategories {
 
 @Resolver(Category)
 export class CategoryResolver {
-  @FieldResolver(() => String)
+  @FieldResolver(() => String, { nullable: true })
   shortDescription(@Root() root: Category) {
-    return `${root.description?.slice(0, 40)}...`;
+    if (root.description && root.description.length > 40) {
+      return `${root.description?.slice(0, 40)}...`;
+    }
+    return root.description || '(No description found)';
   }
 
   private async validateCategoryData(
@@ -216,6 +219,8 @@ export class CategoryResolver {
     @Arg("categoryData") categoryData: CategoryData,
     @Ctx() { req }: MyContext
   ): Promise<CategoryResponse> {
+    const { userId } = req.session || {};
+    const isAdminUser = await isAdmin(userId as number);
     let { category, errors = [] } = await this.validateUpdateCategoryData(
       categoryData
     );
@@ -226,7 +231,7 @@ export class CategoryResolver {
       errors.push(new DBError("category", "Error while getting the category"));
       return { errors };
     }
-    if (category.creatorId !== req.session.userId) {
+    if (!isAdminUser && category.creatorId !== userId) {
       errors.push(
         new CacheError(
           "token",
@@ -257,7 +262,7 @@ export class CategoryResolver {
 
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth)
-  async deleteCategory(@Arg("id") id: number): Promise<boolean> {
+  async deleteCategory(@Arg("id", () => Int) id: number): Promise<boolean> {
     try {
       await Category.delete(id);
       return true;
@@ -275,21 +280,26 @@ export class CategoryResolver {
     @Arg("updated") updated: UpdatedExercises
   ): Promise<Boolean> {
     try {
+      const { userId } = req.session || {};
+      const isAdminUser = await isAdmin(userId as number);
       const { added, removed } = updated;
       if (added.length > 0) {
         const addedQuery = `
           update exercise set "categoryId" = ${id} 
-            where exercise.id in (${updated.added})
-              and exercise."creatorId" = ${req.session.userId};
-        `;
+            where exercise.id in (${updated.added})`;
+        if (!isAdminUser) {
+          addedQuery.concat(` and exercise."creatorId" = ${userId};
+          `);
+        }
         await getConnection().query(addedQuery);
       }
       if (removed.length > 0) {
         const removedQuery = `
           update exercise set "categoryId" = NULL
-            where exercise.id in (${updated.removed})
-              and exercise."creatorId" = ${req.session.userId};
-        `;
+            where exercise.id in (${updated.removed})`;
+        if (!isAdminUser) {
+          removedQuery.concat(` and exercise."creatorId" = ${userId};`);
+        }
         await getConnection().query(removedQuery);
       }
       return true;

@@ -115,6 +115,7 @@ export type Exercise = {
   steps?: Maybe<Array<Maybe<Step>>>;
   createdAt: Scalars['String'];
   updatedAt: Scalars['String'];
+  shortDescription?: Maybe<Scalars['String']>;
 };
 
 export type Step = {
@@ -169,7 +170,7 @@ export type Category = {
   exercises?: Maybe<Array<Maybe<Exercise>>>;
   createdAt: Scalars['String'];
   updatedAt: Scalars['String'];
-  shortDescription: Scalars['String'];
+  shortDescription?: Maybe<Scalars['String']>;
 };
 
 export type PaginatedCategories = {
@@ -300,7 +301,7 @@ export type MutationUpdateExerciseArgs = {
 
 
 export type MutationDeleteExerciseArgs = {
-  id: Scalars['Float'];
+  id: Scalars['Int'];
 };
 
 
@@ -322,7 +323,7 @@ export type MutationUpdateCategoryArgs = {
 
 
 export type MutationDeleteCategoryArgs = {
-  id: Scalars['Float'];
+  id: Scalars['Int'];
 };
 
 
@@ -488,7 +489,7 @@ export type RegularUserResponseFragment = (
 
 export type SimpleExerciseFragment = (
   { __typename?: 'Exercise' }
-  & Pick<Exercise, 'id' | 'name'>
+  & Pick<Exercise, 'id' | 'name' | 'shortDescription' | 'difficulty'>
 );
 
 export type ChangePasswordMutationVariables = Exact<{
@@ -505,14 +506,37 @@ export type ChangePasswordMutation = (
   ) }
 );
 
+export type CreateCategoryMutationVariables = Exact<{
+  categoryData: CategoryData;
+}>;
+
+
+export type CreateCategoryMutation = (
+  { __typename?: 'Mutation' }
+  & { createCategory: (
+    { __typename?: 'CategoryResponse' }
+    & RegularCategoryResponseFragment
+  ) }
+);
+
 export type DeleteCategoryMutationVariables = Exact<{
-  id: Scalars['Float'];
+  id: Scalars['Int'];
 }>;
 
 
 export type DeleteCategoryMutation = (
   { __typename?: 'Mutation' }
   & Pick<Mutation, 'deleteCategory'>
+);
+
+export type DeleteExerciseMutationVariables = Exact<{
+  id: Scalars['Int'];
+}>;
+
+
+export type DeleteExerciseMutation = (
+  { __typename?: 'Mutation' }
+  & Pick<Mutation, 'deleteExercise'>
 );
 
 export type ForgotPasswordMutationVariables = Exact<{
@@ -686,6 +710,8 @@ export const SimpleExerciseFragmentDoc = gql`
     fragment SimpleExercise on Exercise {
   id
   name
+  shortDescription
+  difficulty
 }
     `;
 export const RegularCategoryFragmentDoc = gql`
@@ -749,14 +775,34 @@ export const ChangePasswordDocument = gql`
 export function useChangePasswordMutation() {
   return Urql.useMutation<ChangePasswordMutation, ChangePasswordMutationVariables>(ChangePasswordDocument);
 };
+export const CreateCategoryDocument = gql`
+    mutation CreateCategory($categoryData: CategoryData!) {
+  createCategory(categoryData: $categoryData) {
+    ...RegularCategoryResponse
+  }
+}
+    ${RegularCategoryResponseFragmentDoc}`;
+
+export function useCreateCategoryMutation() {
+  return Urql.useMutation<CreateCategoryMutation, CreateCategoryMutationVariables>(CreateCategoryDocument);
+};
 export const DeleteCategoryDocument = gql`
-    mutation DeleteCategory($id: Float!) {
+    mutation DeleteCategory($id: Int!) {
   deleteCategory(id: $id)
 }
     `;
 
 export function useDeleteCategoryMutation() {
   return Urql.useMutation<DeleteCategoryMutation, DeleteCategoryMutationVariables>(DeleteCategoryDocument);
+};
+export const DeleteExerciseDocument = gql`
+    mutation DeleteExercise($id: Int!) {
+  deleteExercise(id: $id)
+}
+    `;
+
+export function useDeleteExerciseMutation() {
+  return Urql.useMutation<DeleteExerciseMutation, DeleteExerciseMutationVariables>(DeleteExerciseDocument);
 };
 export const ForgotPasswordDocument = gql`
     mutation ForgotPassword($email: String!) {

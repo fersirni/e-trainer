@@ -80,14 +80,15 @@ const EditCategory: NextPage = () => {
     const response = await updateCategory({ categoryData: { ...values } });
     if (response.data?.updateCategory.errors) {
       setErrors(toErrorMap(response.data.updateCategory.errors));
+    } else {
+      toast({
+        title: "Success",
+        description: "Category Updated!",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
     }
-    toast({
-      title: "Success",
-      description: "Category Updated!",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
   };
   const handleChange = (event: any) => {
     const val = event.target.value;
@@ -206,6 +207,7 @@ const EditCategory: NextPage = () => {
     <Tr>
       <Th>Id</Th>
       <Th>Name</Th>
+      <Th>Owned By</Th>
       <Th isNumeric>Action</Th>
     </Tr>
   );
@@ -229,11 +231,12 @@ const EditCategory: NextPage = () => {
           <Link>{e.name}</Link>
         </NextLink>
       </Td>
+      <Td>Coming Soon!</Td>
       <Td isNumeric>{getButton(e.id)}</Td>
     </Tr>
   ));
 
-  const table = fetching ? (
+  const table = fetchingExercises ? (
     <>
       <Table size="sm">
         <Thead>{headers}</Thead>
@@ -331,12 +334,18 @@ const EditCategory: NextPage = () => {
             </Box>
             <Box mt={8}>
               <Field name="isPublic">
-                {({ field }: any) => (
-                  <FormControl display="flex" alignItems="center">
+                {({ field, form }: any) => (
+                  <FormControl
+                    id="isPublic"
+                    display="flex"
+                    alignItems="center"
+                    isInvalid={form.errors.options && form.touched.options}
+                  >
                     <FormLabel htmlFor="isPublic" mb="0">
                       Make it public!
                     </FormLabel>
-                    <Switch {...field} id="isPublic" />
+                    <Switch {...field} isChecked={isPublic} id="isPublic" />
+                    <FormErrorMessage>{form.errors.options}</FormErrorMessage>
                   </FormControl>
                 )}
               </Field>
@@ -381,7 +390,7 @@ const EditCategory: NextPage = () => {
 
   return (
     <>
-      <AdminBar />
+      <AdminBar goBack="categories"/>
       <Wrapper variant="big">
         <Flex>
           <Box flex="1" pr={10}>
