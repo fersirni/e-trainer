@@ -1,0 +1,5 @@
+query Exercise($id: Int!) {
+  exercise(id: $id) {
+    ...RegularExercise
+  }
+}

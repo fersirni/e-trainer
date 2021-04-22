@@ -1,0 +1,5 @@
+mutation UpdateExercise($exerciseData: ExerciseData!) {
+  updateExercise(exerciseData: $exerciseData) {
+    ...RegularExerciseResponse
+  }
+}

@@ -94,14 +94,9 @@ export class ExerciseResolver {
   ): Promise<ExerciseResponse> {
     let errors: Error[] = [];
     let exercise;
-    const { id, creatorId } = exerciseData;
+    const { id } = exerciseData;
     if (!id) {
       errors.push(new FieldError("id", "Cannot find exercise without id"));
-      return { errors };
-    }
-    const creator = await User.findOne(creatorId);
-    if (!creator || creator._id !== creatorId) {
-      errors.push(new FieldError("creatorId", `You don't ahve permissions to update this exercise`));
       return { errors };
     }
     exercise = await Exercise.findOne(id);
@@ -134,7 +129,7 @@ export class ExerciseResolver {
   }
 
   @Query(() => Exercise, { nullable: true })
-  exercise(@Arg("id") id: number): Promise<Exercise | undefined> {
+  exercise(@Arg("id", () => Int) id: number): Promise<Exercise | undefined> {
     return Exercise.findOne(id, { relations: ["steps"] });
   }
   
@@ -148,10 +143,11 @@ export class ExerciseResolver {
       const search: string = searchName || "";
       const { userId } = req.session || {};
       const query = `
-        select exercise.* from exercise
+        select exercise.*, category.name as "categoryName" from exercise
+        left join category on category.id = exercise."categoryId"
         where exercise."creatorId" = ${userId}
         and exercise.name LIKE '%${search}%'
-        order by exercise.name;
+        order by exercise."updatedAt" DESC;
         `;
       return getConnection().query(query);
       // return Exercise.find({ relations: ["steps"] });
@@ -198,11 +194,18 @@ export class ExerciseResolver {
   @Mutation(() => ExerciseResponse)
   @UseMiddleware(isAuth)
   async updateExercise(
+    @Ctx() { req }: MyContext,
     @Arg("exerciseData") exerciseData: ExerciseData
   ): Promise<ExerciseResponse> {
     let { exercise, errors = [] } = await this.validateUpdateExerciseData(
       exerciseData
     );
+    const { userId: creatorId } = req.session || {};
+    const creator = creatorId? await User.findOne(creatorId) : undefined;
+    if (!creator || creator._id !== creatorId) {
+      errors.push(new FieldError("creatorId", `You don't ahve permissions to update this exercise`));
+      return { errors };
+    }
     if (errors.length > 0) {
       return { errors };
     }

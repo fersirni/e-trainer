@@ -39,9 +39,13 @@ export class Exercise extends BaseEntity {
   @Column({ nullable: true })
   options?: string;
 
+  @Field({ nullable: true, defaultValue: "(No owner found)" })
+  categoryName?: string;
+
+  @Field({ nullable: true })
   @ManyToOne(() => Category, (category) => category.exercises, {
     onDelete: "CASCADE",
-    nullable: true
+    nullable: true,
   })
   category: Category;
 

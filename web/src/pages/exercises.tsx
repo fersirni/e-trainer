@@ -159,7 +159,7 @@ const Exercises: React.FC<exercisesProps> = ({}) => {
       </Td>
       <Td>{e.shortDescription}</Td>
       <Td>
-        <Tag size="sm" colorScheme={difficultyColor(e.difficulty)}>
+        <Tag size="lg" colorScheme={difficultyColor(e.difficulty)}>
           {e.difficulty}
         </Tag>
       </Td>

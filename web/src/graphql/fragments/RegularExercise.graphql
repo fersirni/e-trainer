@@ -1,0 +1,7 @@
+fragment RegularExercise on Exercise {
+    id
+    name
+    description
+    options
+    difficulty
+}

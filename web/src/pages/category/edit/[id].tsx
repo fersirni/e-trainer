@@ -107,6 +107,7 @@ const EditCategory: NextPage = () => {
     const exercise = exercises.find((e: any) => id === e.id);
     const exercisesWithoutAssigned = exercises.filter((e: any) => id !== e.id);
     exercise.status = REMOVED_STATUS;
+    exercise.categoryName = "(No owner found)";
     const newExercises = [...exercisesWithoutAssigned, exercise];
     setExercises(newExercises);
     const updated = {
@@ -119,6 +120,7 @@ const EditCategory: NextPage = () => {
     const exercise = exercises.find((e: any) => id === e.id);
     const exercisesWithoutAssigned = exercises.filter((e: any) => id !== e.id);
     exercise.status = ADDED_STATUS;
+    exercise.categoryName = "This category";
     const newExercises = [...exercisesWithoutAssigned, exercise];
     setExercises(newExercises);
     const updated = {
@@ -140,10 +142,12 @@ const EditCategory: NextPage = () => {
       const exercisesList = (exercisesData?.exercises || []).map((e: any) => ({
         id: e.id,
         name: e.name,
+        categoryName: e.categoryName || "(No owner found)",
       }));
       const categoryExercises = (category?.exercises || []).map((e: any) => ({
         id: e.id,
         name: e.name,
+        categoryName: "This cateogry",
         status: ADDED_STATUS,
       }));
       let filteredExercises = [...categoryExercises, ...exercisesList];
@@ -171,7 +175,7 @@ const EditCategory: NextPage = () => {
         }}
         size="sm"
         variant="outline"
-        colorScheme="tomato"
+        colorScheme="red"
         aria-label="Remove"
         icon={<Icon as={TiTrash} boxSize={6} />}
       />
@@ -204,7 +208,7 @@ const EditCategory: NextPage = () => {
   };
 
   const headers = (
-    <Tr>
+    <Tr zIndex={1} position="sticky" top={0}>
       <Th>Id</Th>
       <Th>Name</Th>
       <Th>Owned By</Th>
@@ -231,7 +235,7 @@ const EditCategory: NextPage = () => {
           <Link>{e.name}</Link>
         </NextLink>
       </Td>
-      <Td>Coming Soon!</Td>
+      <Td>{e.categoryName}</Td>
       <Td isNumeric>{getButton(e.id)}</Td>
     </Tr>
   ));
@@ -252,13 +256,20 @@ const EditCategory: NextPage = () => {
       </Center>
     </>
   ) : exercises.length > 0 ? (
-    <Table size="sm">
-      <Thead>{headers}</Thead>
-      <Tbody>{body}</Tbody>
-      <TableCaption>{`Exercises assigned: ${
-        exercises.filter((e: any) => e.status === ADDED_STATUS).length
-      }`}</TableCaption>
-    </Table>
+    <>
+      <Box maxH={96} overflowY="auto">
+        <Table size="sm">
+          <Thead>{headers}</Thead>
+
+          <Tbody>{body}</Tbody>
+        </Table>
+      </Box>
+      <Table size="sm">
+        <TableCaption>{`Exercises assigned: ${
+          exercises.filter((e: any) => e.status === ADDED_STATUS).length
+        }`}</TableCaption>
+      </Table>
+    </>
   ) : (
     emptyBody
   );
@@ -390,7 +401,7 @@ const EditCategory: NextPage = () => {
 
   return (
     <>
-      <AdminBar goBack="categories"/>
+      <AdminBar goBack="categories" />
       <Wrapper variant="big">
         <Flex>
           <Box flex="1" pr={10}>

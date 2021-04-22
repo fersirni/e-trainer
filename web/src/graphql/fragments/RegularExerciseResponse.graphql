@@ -1,0 +1,8 @@
+fragment RegularExerciseResponse on ExerciseResponse {
+    exercise {
+        ...RegularExercise
+    }
+    errors {
+        ...RegularError
+    }
+}

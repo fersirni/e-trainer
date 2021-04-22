@@ -55,7 +55,7 @@ export type QueryStepArgs = {
 
 
 export type QueryExerciseArgs = {
-  id: Scalars['Float'];
+  id: Scalars['Int'];
 };
 
 
@@ -112,7 +112,23 @@ export type Exercise = {
   difficulty: Scalars['String'];
   description?: Maybe<Scalars['String']>;
   options?: Maybe<Scalars['String']>;
+  categoryName?: Maybe<Scalars['String']>;
+  category?: Maybe<Category>;
   steps?: Maybe<Array<Maybe<Step>>>;
+  createdAt: Scalars['String'];
+  updatedAt: Scalars['String'];
+  shortDescription?: Maybe<Scalars['String']>;
+};
+
+export type Category = {
+  __typename?: 'Category';
+  id: Scalars['Int'];
+  name: Scalars['String'];
+  isPublic: Scalars['Boolean'];
+  creatorId: Scalars['Float'];
+  description?: Maybe<Scalars['String']>;
+  options?: Maybe<Scalars['String']>;
+  exercises?: Maybe<Array<Maybe<Exercise>>>;
   createdAt: Scalars['String'];
   updatedAt: Scalars['String'];
   shortDescription?: Maybe<Scalars['String']>;
@@ -157,20 +173,6 @@ export type Answer = {
   drawData?: Maybe<Scalars['String']>;
   createdAt: Scalars['String'];
   updatedAt: Scalars['String'];
-};
-
-export type Category = {
-  __typename?: 'Category';
-  id: Scalars['Int'];
-  name: Scalars['String'];
-  isPublic: Scalars['Boolean'];
-  creatorId: Scalars['Float'];
-  description?: Maybe<Scalars['String']>;
-  options?: Maybe<Scalars['String']>;
-  exercises?: Maybe<Array<Maybe<Exercise>>>;
-  createdAt: Scalars['String'];
-  updatedAt: Scalars['String'];
-  shortDescription?: Maybe<Scalars['String']>;
 };
 
 export type PaginatedCategories = {
@@ -471,6 +473,22 @@ export type RegularErrorFragment = (
   & Pick<Error, 'message' | 'field' | 'key' | 'entity'>
 );
 
+export type RegularExerciseFragment = (
+  { __typename?: 'Exercise' }
+  & Pick<Exercise, 'id' | 'name' | 'description' | 'options' | 'difficulty'>
+);
+
+export type RegularExerciseResponseFragment = (
+  { __typename?: 'ExerciseResponse' }
+  & { exercise?: Maybe<(
+    { __typename?: 'Exercise' }
+    & RegularExerciseFragment
+  )>, errors?: Maybe<Array<(
+    { __typename?: 'Error' }
+    & RegularErrorFragment
+  )>> }
+);
+
 export type RegularUserFragment = (
   { __typename?: 'User' }
   & Pick<User, '_id' | 'name' | 'email'>
@@ -489,7 +507,7 @@ export type RegularUserResponseFragment = (
 
 export type SimpleExerciseFragment = (
   { __typename?: 'Exercise' }
-  & Pick<Exercise, 'id' | 'name' | 'shortDescription' | 'difficulty'>
+  & Pick<Exercise, 'id' | 'name' | 'shortDescription' | 'categoryName' | 'difficulty'>
 );
 
 export type ChangePasswordMutationVariables = Exact<{
@@ -608,6 +626,19 @@ export type UpdateCategoryMutation = (
   ) }
 );
 
+export type UpdateExerciseMutationVariables = Exact<{
+  exerciseData: ExerciseData;
+}>;
+
+
+export type UpdateExerciseMutation = (
+  { __typename?: 'Mutation' }
+  & { updateExercise: (
+    { __typename?: 'ExerciseResponse' }
+    & RegularExerciseResponseFragment
+  ) }
+);
+
 export type UpdateExercisesMutationVariables = Exact<{
   categoryId: Scalars['Int'];
   updated: UpdatedExercises;
@@ -670,6 +701,19 @@ export type CategoryQuery = (
   )> }
 );
 
+export type ExerciseQueryVariables = Exact<{
+  id: Scalars['Int'];
+}>;
+
+
+export type ExerciseQuery = (
+  { __typename?: 'Query' }
+  & { exercise?: Maybe<(
+    { __typename?: 'Exercise' }
+    & RegularExerciseFragment
+  )> }
+);
+
 export type ExercisesQueryVariables = Exact<{
   searchName?: Maybe<Scalars['String']>;
 }>;
@@ -711,6 +755,7 @@ export const SimpleExerciseFragmentDoc = gql`
   id
   name
   shortDescription
+  categoryName
   difficulty
 }
     `;
@@ -745,6 +790,26 @@ export const RegularCategoryResponseFragmentDoc = gql`
   }
 }
     ${RegularCategoryFragmentDoc}
+${RegularErrorFragmentDoc}`;
+export const RegularExerciseFragmentDoc = gql`
+    fragment RegularExercise on Exercise {
+  id
+  name
+  description
+  options
+  difficulty
+}
+    `;
+export const RegularExerciseResponseFragmentDoc = gql`
+    fragment RegularExerciseResponse on ExerciseResponse {
+  exercise {
+    ...RegularExercise
+  }
+  errors {
+    ...RegularError
+  }
+}
+    ${RegularExerciseFragmentDoc}
 ${RegularErrorFragmentDoc}`;
 export const RegularUserFragmentDoc = gql`
     fragment RegularUser on User {
@@ -866,6 +931,17 @@ export const UpdateCategoryDocument = gql`
 export function useUpdateCategoryMutation() {
   return Urql.useMutation<UpdateCategoryMutation, UpdateCategoryMutationVariables>(UpdateCategoryDocument);
 };
+export const UpdateExerciseDocument = gql`
+    mutation UpdateExercise($exerciseData: ExerciseData!) {
+  updateExercise(exerciseData: $exerciseData) {
+    ...RegularExerciseResponse
+  }
+}
+    ${RegularExerciseResponseFragmentDoc}`;
+
+export function useUpdateExerciseMutation() {
+  return Urql.useMutation<UpdateExerciseMutation, UpdateExerciseMutationVariables>(UpdateExerciseDocument);
+};
 export const UpdateExercisesDocument = gql`
     mutation UpdateExercises($categoryId: Int!, $updated: UpdatedExercises!) {
   updateExercises(categoryId: $categoryId, updated: $updated)
@@ -918,6 +994,17 @@ export const CategoryDocument = gql`
 
 export function useCategoryQuery(options: Omit<Urql.UseQueryArgs<CategoryQueryVariables>, 'query'> = {}) {
   return Urql.useQuery<CategoryQuery>({ query: CategoryDocument, ...options });
+};
+export const ExerciseDocument = gql`
+    query Exercise($id: Int!) {
+  exercise(id: $id) {
+    ...RegularExercise
+  }
+}
+    ${RegularExerciseFragmentDoc}`;
+
+export function useExerciseQuery(options: Omit<Urql.UseQueryArgs<ExerciseQueryVariables>, 'query'> = {}) {
+  return Urql.useQuery<ExerciseQuery>({ query: ExerciseDocument, ...options });
 };
 export const ExercisesDocument = gql`
     query Exercises($searchName: String) {
