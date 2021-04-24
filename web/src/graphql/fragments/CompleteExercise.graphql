@@ -1,0 +1,30 @@
+fragment CompleteExercise on Exercise {
+  id
+  name
+  description
+  options
+  difficulty
+  steps {
+    id
+    name
+    options
+    description
+    ttl
+    type
+    order
+    dialogs {
+      id
+      name
+      order
+      data
+      type
+      answerType
+      answers {
+        id
+        data
+        type
+        isCorrect
+      }
+    }
+  }
+}

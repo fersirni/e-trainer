@@ -1,0 +1,5 @@
+mutation UpdateStep($stepData: StepData!) {
+  updateStep(stepData: $stepData) {
+    ...RegularStepResponse
+  }
+}

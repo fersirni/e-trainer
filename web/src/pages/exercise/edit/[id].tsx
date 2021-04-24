@@ -6,7 +6,7 @@ import { Wrapper } from "../../../components/Wrapper";
 import { AdminBar } from "../../../components/AdminBar";
 import { useRouter } from "next/router";
 import { useIsAuth } from "../../../utils/useIsAuth";
-import { Flex, Box, Tabs, Tab, TabList, TabPanel, TabPanels, Icon } from "@chakra-ui/react";
+import { Tabs, Tab, TabList, TabPanel, TabPanels, Icon } from "@chakra-ui/react";
 import { ExerciseConfiguration } from "../../../components/ExerciseConfiguration";
 import { TiCogOutline, TiThListOutline } from "react-icons/ti";
 import { StepsConfiguration } from "../../../components/StepsConfiguration";

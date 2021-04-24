@@ -1,0 +1,8 @@
+fragment RegularStepResponse on StepResponse {
+    step {
+        ...RegularStep
+    }
+    errors {
+        ...RegularError
+    }
+}

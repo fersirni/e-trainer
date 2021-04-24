@@ -1,0 +1,9 @@
+fragment RegularStep on Step {
+    id
+    order
+    name
+    description
+    options
+    type
+    ttl
+}

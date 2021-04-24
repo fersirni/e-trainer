@@ -1,103 +1,107 @@
 import {
   Box,
-  FormControl,
-  FormLabel,
-  Input,
-  FormErrorMessage,
-  Textarea,
-  Wrap,
-  WrapItem,
   Center,
-  Button,
-  useToast,
-  Spinner,
-  Flex,
-  Select,
   Accordion,
   AccordionButton,
   AccordionIcon,
   AccordionItem,
   AccordionPanel,
   Heading,
+  Button,
+  Flex,
 } from "@chakra-ui/react";
-import { Formik, Form, Field } from "formik";
-import { useRouter } from "next/router";
 import React from "react";
-import {
-  Exercise,
-  useExerciseQuery,
-  useUpdateExerciseMutation,
-} from "../generated/graphql";
-import { toErrorMap } from "../utils/toErrorMap";
+import { Step } from "../generated/graphql";
 
 interface StepsAccordionProps {
-  exerciseId: number;
+  steps: Step[];
 }
 
-export const StepsAccordion: React.FC<StepsAccordionProps> = ({
-  exerciseId,
-}) => {
-  const toast = useToast();
-  const router = useRouter();
+export const StepsAccordion: React.FC<StepsAccordionProps> = ({ steps }) => {
+  const getDialogs = (step: any) => {
+    if (!step.dialogs) {
+      return "No dialogs found";
+    }
+    return step.dialogs.map((d: any) => (
+      <>
+        <Box
+          key={d.id}
+          pt={2}
+          pb={2}
+          name={d.id}
+          borderBottom="solid"
+          flex="1"
+          textAlign="center"
+          borderBottomColor="gray.700"
+          onMouseOver={(e: any) => {
+            e.target.style.background = "#0080807a";
+          }}
+          onMouseLeave={(e: any) => {
+            e.target.style.background = "transparent";
+          }}
+        >
+          {d.name}
+        </Box>
+      </>
+    ));
+  };
 
-  const spinner = (
-    <Center mt={32}>
-      <Spinner
-        thickness="4px"
-        speed="0.65s"
-        emptyColor="gray.200"
-        color="blue.500"
-        size="xl"
-      />
-    </Center>
+  const accordionSteps = steps.map((s: any) => (
+    <AccordionItem key={s.id}>
+      <h2>
+        <AccordionButton _expanded={{ bg: "teal", color: "white" }} >
+          <Box flex="1" textAlign="left">
+            {s.name}
+          </Box>
+          <AccordionIcon />
+        </AccordionButton>
+      </h2>
+      <AccordionPanel pb={4}>{getDialogs(s)}</AccordionPanel>
+    </AccordionItem>
+  ));
+
+  const addStep = (
+    <AccordionItem key="new">
+      <h2>
+        <AccordionButton>
+          <Box flex="1" textAlign="center">
+            Add Step
+          </Box>
+        </AccordionButton>
+      </h2>
+    </AccordionItem>
   );
 
-  let accordion = null;
-  accordion = (
+  const accordion = (
     <>
-      <Box maxW={40}>
+      <Box>
         <Center>
-        <Heading pb={4} size="md">
-          Steps
-        </Heading>
+          <Heading pb={4} size="md">
+            Steps
+          </Heading>
         </Center>
-        <Accordion defaultIndex={[0]} allowMultiple>
-          <AccordionItem>
-            <h2>
-              <AccordionButton>
-                <Box flex="1" textAlign="left">
-                  Section 1 title
-                </Box>
-                <AccordionIcon />
-              </AccordionButton>
-            </h2>
-            <AccordionPanel pb={4}>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-              enim ad minim veniam, quis nostrud exercitation ullamco laboris
-              nisi ut aliquip ex ea commodo consequat.
-            </AccordionPanel>
-          </AccordionItem>
-
-          <AccordionItem>
-            <h2>
-              <AccordionButton>
-                <Box flex="1" textAlign="left">
-                  Section 2 title
-                </Box>
-                <AccordionIcon />
-              </AccordionButton>
-            </h2>
-            <AccordionPanel pb={4}>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-              enim ad minim veniam, quis nostrud exercitation ullamco laboris
-              nisi ut aliquip ex ea commodo consequat.
-            </AccordionPanel>
-          </AccordionItem>
+        <Accordion
+          border="solid"
+          borderColor="gray.700"
+          maxH={96}
+          overflowY="auto"
+          defaultIndex={[0]}
+          allowMultiple
+        >
+          {accordionSteps}
         </Accordion>
+        <Accordion border="solid"
+          borderColor="gray.700">{addStep}</Accordion>
+        <Center>
+          <Box pt={2} size="md">
+            {accordionSteps.length} steps
+          </Box>
+        </Center>
       </Box>
     </>
   );
-  return <>{accordion || spinner}</>;
+
+  const emptySteps = null;
+
+  return <>{accordion || emptySteps}</>;
 };

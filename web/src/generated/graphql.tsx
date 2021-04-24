@@ -448,6 +448,23 @@ export type UpdatedExercises = {
   removed?: Maybe<Array<Scalars['Int']>>;
 };
 
+export type CompleteExerciseFragment = (
+  { __typename?: 'Exercise' }
+  & Pick<Exercise, 'id' | 'name' | 'description' | 'options' | 'difficulty'>
+  & { steps?: Maybe<Array<Maybe<(
+    { __typename?: 'Step' }
+    & Pick<Step, 'id' | 'name' | 'options' | 'description' | 'ttl' | 'type' | 'order'>
+    & { dialogs?: Maybe<Array<Maybe<(
+      { __typename?: 'Dialog' }
+      & Pick<Dialog, 'id' | 'name' | 'order' | 'data' | 'type' | 'answerType'>
+      & { answers?: Maybe<Array<Maybe<(
+        { __typename?: 'Answer' }
+        & Pick<Answer, 'id' | 'data' | 'type' | 'isCorrect'>
+      )>>> }
+    )>>> }
+  )>>> }
+);
+
 export type RegularCategoryFragment = (
   { __typename?: 'Category' }
   & Pick<Category, 'id' | 'name' | 'description' | 'options' | 'creatorId' | 'isPublic'>
@@ -483,6 +500,22 @@ export type RegularExerciseResponseFragment = (
   & { exercise?: Maybe<(
     { __typename?: 'Exercise' }
     & RegularExerciseFragment
+  )>, errors?: Maybe<Array<(
+    { __typename?: 'Error' }
+    & RegularErrorFragment
+  )>> }
+);
+
+export type RegularStepFragment = (
+  { __typename?: 'Step' }
+  & Pick<Step, 'id' | 'order' | 'name' | 'description' | 'options' | 'type' | 'ttl'>
+);
+
+export type RegularStepResponseFragment = (
+  { __typename?: 'StepResponse' }
+  & { step?: Maybe<(
+    { __typename?: 'Step' }
+    & RegularStepFragment
   )>, errors?: Maybe<Array<(
     { __typename?: 'Error' }
     & RegularErrorFragment
@@ -650,6 +683,19 @@ export type UpdateExercisesMutation = (
   & Pick<Mutation, 'updateExercises'>
 );
 
+export type UpdateStepMutationVariables = Exact<{
+  stepData: StepData;
+}>;
+
+
+export type UpdateStepMutation = (
+  { __typename?: 'Mutation' }
+  & { updateStep: (
+    { __typename?: 'StepResponse' }
+    & RegularStepResponseFragment
+  ) }
+);
+
 export type UpdateUserMutationVariables = Exact<{
   id: Scalars['Float'];
   email: Scalars['String'];
@@ -698,6 +744,19 @@ export type CategoryQuery = (
   & { category?: Maybe<(
     { __typename?: 'Category' }
     & RegularCategoryFragment
+  )> }
+);
+
+export type CompleteExerciseQueryVariables = Exact<{
+  id: Scalars['Int'];
+}>;
+
+
+export type CompleteExerciseQuery = (
+  { __typename?: 'Query' }
+  & { exercise?: Maybe<(
+    { __typename?: 'Exercise' }
+    & CompleteExerciseFragment
   )> }
 );
 
@@ -750,6 +809,38 @@ export type UsersQuery = (
   )> }
 );
 
+export const CompleteExerciseFragmentDoc = gql`
+    fragment CompleteExercise on Exercise {
+  id
+  name
+  description
+  options
+  difficulty
+  steps {
+    id
+    name
+    options
+    description
+    ttl
+    type
+    order
+    dialogs {
+      id
+      name
+      order
+      data
+      type
+      answerType
+      answers {
+        id
+        data
+        type
+        isCorrect
+      }
+    }
+  }
+}
+    `;
 export const SimpleExerciseFragmentDoc = gql`
     fragment SimpleExercise on Exercise {
   id
@@ -810,6 +901,28 @@ export const RegularExerciseResponseFragmentDoc = gql`
   }
 }
     ${RegularExerciseFragmentDoc}
+${RegularErrorFragmentDoc}`;
+export const RegularStepFragmentDoc = gql`
+    fragment RegularStep on Step {
+  id
+  order
+  name
+  description
+  options
+  type
+  ttl
+}
+    `;
+export const RegularStepResponseFragmentDoc = gql`
+    fragment RegularStepResponse on StepResponse {
+  step {
+    ...RegularStep
+  }
+  errors {
+    ...RegularError
+  }
+}
+    ${RegularStepFragmentDoc}
 ${RegularErrorFragmentDoc}`;
 export const RegularUserFragmentDoc = gql`
     fragment RegularUser on User {
@@ -951,6 +1064,17 @@ export const UpdateExercisesDocument = gql`
 export function useUpdateExercisesMutation() {
   return Urql.useMutation<UpdateExercisesMutation, UpdateExercisesMutationVariables>(UpdateExercisesDocument);
 };
+export const UpdateStepDocument = gql`
+    mutation UpdateStep($stepData: StepData!) {
+  updateStep(stepData: $stepData) {
+    ...RegularStepResponse
+  }
+}
+    ${RegularStepResponseFragmentDoc}`;
+
+export function useUpdateStepMutation() {
+  return Urql.useMutation<UpdateStepMutation, UpdateStepMutationVariables>(UpdateStepDocument);
+};
 export const UpdateUserDocument = gql`
     mutation UpdateUser($id: Float!, $email: String!, $name: String!) {
   updateUser(id: $id, name: $name, email: $email) {
@@ -994,6 +1118,17 @@ export const CategoryDocument = gql`
 
 export function useCategoryQuery(options: Omit<Urql.UseQueryArgs<CategoryQueryVariables>, 'query'> = {}) {
   return Urql.useQuery<CategoryQuery>({ query: CategoryDocument, ...options });
+};
+export const CompleteExerciseDocument = gql`
+    query CompleteExercise($id: Int!) {
+  exercise(id: $id) {
+    ...CompleteExercise
+  }
+}
+    ${CompleteExerciseFragmentDoc}`;
+
+export function useCompleteExerciseQuery(options: Omit<Urql.UseQueryArgs<CompleteExerciseQueryVariables>, 'query'> = {}) {
+  return Urql.useQuery<CompleteExerciseQuery>({ query: CompleteExerciseDocument, ...options });
 };
 export const ExerciseDocument = gql`
     query Exercise($id: Int!) {
