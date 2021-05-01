@@ -17,18 +17,22 @@ import { Formik, Form, Field } from "formik";
 import { useRouter } from "next/router";
 import React from "react";
 import {
+  useCreateStepMutation,
   useUpdateStepMutation,
 } from "../generated/graphql";
 import { toErrorMap } from "../utils/toErrorMap";
 
 interface StepConfigurationProps {
-  step: any;
+  step?: any;
+  exerciseId?: any;
+  onStepAdded?: any;
 }
 
-export const StepConfiguration: React.FC<StepConfigurationProps> = ({ step }) => {
+export const StepConfiguration: React.FC<StepConfigurationProps> = ({ step, exerciseId, onStepAdded }) => {
   const toast = useToast();
   const router = useRouter();
   const [, updateStep] = useUpdateStepMutation();
+  const [, createStep] = useCreateStepMutation();
 
   const emptyStep = (
     <>
@@ -37,18 +41,35 @@ export const StepConfiguration: React.FC<StepConfigurationProps> = ({ step }) =>
   );
 
   const handleSubmit = async (values: any, { setErrors }: any) => {
-    values.id = step.id;
-    const response = await updateStep({ stepData: { ...values } });
-    if (response.data?.updateStep.errors) {
-      setErrors(toErrorMap(response.data.updateStep.errors));
+    let response;
+    let errors;
+    let savedStep;
+    if (step?.id) {
+      values.id = step.id;
+      response = await updateStep({ stepData: { ...values } });
+      errors = response.data?.updateStep.errors;
+      savedStep = response.data?.updateStep.step;
+    } else {
+      response = await createStep({ exerciseId, stepData: { ...values } });
+      errors = response.data?.createStep.errors;
+      savedStep = response.data?.createStep.step;
+    }
+    if (errors) {
+      setErrors(toErrorMap(errors));
+      return;
     } else {
       toast({
         title: "Success",
-        description: "Step Updated!",
+        description: "Saved!",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
+      if (!savedStep) {
+        console.error("It looks that something went wrong while retrieveing the step :(");
+      } else {
+        onStepAdded(savedStep);
+      }
     }
   };
   const { name = "", order = 0, description = "", options = "", type = "", ttl = 0 } = step || {};
@@ -100,7 +121,6 @@ export const StepConfiguration: React.FC<StepConfigurationProps> = ({ step }) =>
                           Step Type
                         </FormLabel>
                         <Select
-                          defaultValue="presentation"
                           placeholder="Select option"
                           variant="flushed"
                           {...field}

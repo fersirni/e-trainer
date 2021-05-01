@@ -13,7 +13,7 @@ import {
 import { getConnection } from "typeorm";
 import { isAuth } from "../middleware/isAuth";
 import { Step } from "../entities/Step";
-import { ANSWER_TYPES, QUESTION_TYPES } from "../constants";
+import { ANSWER_TYPES, DIALOG_TYPES } from "../constants";
 import { AnswerData, AnswerResolver } from "./answer";
 import { Answer } from "../entities/answerTypes/Answer";
 
@@ -86,7 +86,7 @@ export class DialogResolver {
     if (!id && !answerType) {
       return [new FieldError("answerType", "Answer type can't be empty")];
     }
-    if (type && !QUESTION_TYPES.includes(type)) {
+    if (type && !DIALOG_TYPES.includes(type)) {
       return [new FieldError("type", "Invalid type")];
     }
 

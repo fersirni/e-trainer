@@ -4,6 +4,7 @@ import {
   Arg,
   Field,
   InputType,
+  Int,
   Mutation,
   ObjectType,
   Query,
@@ -15,8 +16,7 @@ import { isAuth } from "../middleware/isAuth";
 import { Exercise } from "../entities/Exercise";
 import { DialogData, DialogResolver } from "./dialog";
 import { Dialog } from "../entities/dialogTypes/Dialog";
-
-const STEP_TYPES = ["presentation", "information", "interactive", "results"];
+import { STEP_TYPES } from "../constants";
 
 @ObjectType()
 class StepResponse {
@@ -49,7 +49,7 @@ export class StepData {
 @Resolver()
 export class StepResolver {
   private isIncluded(dialog: Dialog, dialogs: DialogData[]): boolean {
-    const included = dialogs.find(d => d.id && d.id === dialog.id);
+    const included = dialogs.find((d) => d.id && d.id === dialog.id);
     if (included) {
       return true;
     }
@@ -57,7 +57,14 @@ export class StepResolver {
   }
   private validateStepData(stepData: StepData): Error[] {
     let errors: Error[] = [];
-    const { order, name, options, description, ttl, type /*, steps */ } = stepData;
+    const {
+      order,
+      name,
+      options,
+      description,
+      ttl,
+      type,
+    } = stepData;
     if (name && name.length < 5) {
       return [
         new FieldError("name", "The name length has to be grater than 5"),
@@ -114,7 +121,7 @@ export class StepResolver {
   @Mutation(() => StepResponse)
   @UseMiddleware(isAuth)
   async createStep(
-    @Arg("exerciseId") exerciseId: number,
+    @Arg("exerciseId", () => Int) exerciseId: number,
     @Arg("stepData") stepData: StepData
   ): Promise<StepResponse> {
     let errors = [];
@@ -167,23 +174,25 @@ export class StepResolver {
         if (dialog.id) {
           await dr.updateDialog(dialog);
           await getConnection()
-          .createQueryBuilder()
-          .relation(Step, "dialogs")
-          .of(step)
-          .add(dialog.id);
+            .createQueryBuilder()
+            .relation(Step, "dialogs")
+            .of(step)
+            .add(dialog.id);
         } else {
           await dr.createDialog(step.id, dialog);
         }
-      } 
-      
-      if (dialogs.length > 0 && step.dialogs && step.dialogs.length > 0) {        
-        const dialogsToRemove = step.dialogs.filter( dialog => !this.isIncluded(dialog, dialogs));
+      }
+
+      if (dialogs.length > 0 && step.dialogs && step.dialogs.length > 0) {
+        const dialogsToRemove = step.dialogs.filter(
+          (dialog) => !this.isIncluded(dialog, dialogs)
+        );
         if (dialogsToRemove.length > 0) {
           await getConnection()
-          .createQueryBuilder()
-          .relation(Step, "dialogs")
-          .of(step)
-          .remove(dialogsToRemove);
+            .createQueryBuilder()
+            .relation(Step, "dialogs")
+            .of(step)
+            .remove(dialogsToRemove);
         }
       }
       delete stepData.id;

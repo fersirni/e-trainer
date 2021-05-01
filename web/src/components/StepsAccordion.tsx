@@ -7,64 +7,118 @@ import {
   AccordionItem,
   AccordionPanel,
   Heading,
-  Button,
-  Flex,
 } from "@chakra-ui/react";
 import React from "react";
 import { Step } from "../generated/graphql";
 
 interface StepsAccordionProps {
   steps: Step[];
+  handleStepOrDialogChange: any;
+  handleAddStep: any;
 }
 
-export const StepsAccordion: React.FC<StepsAccordionProps> = ({ steps }) => {
+const compareFunction = (first: any, second: any) => {
+  // Either steps and dialogs have the order property inside so...
+  const a = first?.order;
+  const b = second?.order;
+  if (a < b) {
+    return -1;
+  }
+  if (a > b) {
+    return 1;
+  }
+  // a debe ser igual b
+  return 0;
+};
+
+export const StepsAccordion: React.FC<StepsAccordionProps> = ({
+  steps,
+  handleStepOrDialogChange: handleStepOrDialogChange,
+  handleAddStep,
+}) => {
   const getDialogs = (step: any) => {
-    if (!step.dialogs) {
-      return "No dialogs found";
-    }
-    return step.dialogs.map((d: any) => (
-      <>
+    if (!step.dialogs || step.dialogs.length === 0) {
+      return (
         <Box
-          key={d.id}
+          key="emptyDialogs"
           pt={2}
           pb={2}
-          name={d.id}
           borderBottom="solid"
           flex="1"
           textAlign="center"
           borderBottomColor="gray.700"
-          onMouseOver={(e: any) => {
-            e.target.style.background = "#0080807a";
-          }}
-          onMouseLeave={(e: any) => {
-            e.target.style.background = "transparent";
-          }}
+          color="tomato"
         >
-          {d.name}
+          No dialogs found
         </Box>
-      </>
+      );
+    }
+    return step.dialogs.sort(compareFunction).map((d: any) => (
+      <Box
+      onClick={() => {
+        handleStepOrDialogChange({
+          type: "dialog",
+          stepId: step.id,
+          dialogId: d.id
+        });
+      }}
+        key={d.id}
+        pt={2}
+        pb={2}
+        name={d.id}
+        borderBottom="solid"
+        flex="1"
+        textAlign="left"
+        borderBottomColor="gray.700"
+        onMouseOver={(e: any) => {
+          e.target.style.color = "teal";
+        }}
+        onMouseLeave={(e: any) => {
+          e.target.style.color = "white";
+        }}
+      >
+        {d.order} - {d.name}
+      </Box>
     ));
   };
 
-  const accordionSteps = steps.map((s: any) => (
+  const accordionSteps = steps.sort(compareFunction).map((s: any) => (
     <AccordionItem key={s.id}>
-      <h2>
-        <AccordionButton _expanded={{ bg: "teal", color: "white" }} >
-          <Box flex="1" textAlign="left">
-            {s.name}
+      <h2
+        key={`${s.id}-h2`}
+        onClick={() => {
+          handleStepOrDialogChange({
+            type: "step",
+            stepId: s.id,
+          });
+        }}
+      >
+        <AccordionButton
+          key={`${s.id}-ab`}
+          _expanded={{ bg: "teal", color: "white" }}
+        >
+          <Box key={`${s.id}-button`} flex="1" textAlign="left">
+            {`${s.order} - ${s.name}`}
           </Box>
-          <AccordionIcon />
+          <AccordionIcon key={`${s.id}-icon`} />
         </AccordionButton>
       </h2>
-      <AccordionPanel pb={4}>{getDialogs(s)}</AccordionPanel>
+      <AccordionPanel key={`${s.id}-dialogs`} pb={4}>
+        {getDialogs(s)}
+      </AccordionPanel>
     </AccordionItem>
   ));
 
   const addStep = (
-    <AccordionItem key="new">
-      <h2>
-        <AccordionButton>
-          <Box flex="1" textAlign="center">
+    <AccordionItem key="new-step">
+      <h2
+        onClick={() => {
+          handleAddStep();
+        }}
+        key="new-step-h2"
+      >
+        <AccordionButton key="add-step-button">
+          <Box key="add-button" flex="1" textAlign="center">
             Add Step
           </Box>
         </AccordionButton>
@@ -74,13 +128,14 @@ export const StepsAccordion: React.FC<StepsAccordionProps> = ({ steps }) => {
 
   const accordion = (
     <>
-      <Box>
-        <Center>
-          <Heading pb={4} size="md">
+      <Box key="steps-box">
+        <Center key="center-title">
+          <Heading key="step-heading" pb={4} size="md">
             Steps
           </Heading>
         </Center>
         <Accordion
+          key="steps-accordion"
           border="solid"
           borderColor="gray.700"
           maxH={96}
@@ -90,10 +145,15 @@ export const StepsAccordion: React.FC<StepsAccordionProps> = ({ steps }) => {
         >
           {accordionSteps}
         </Accordion>
-        <Accordion border="solid"
-          borderColor="gray.700">{addStep}</Accordion>
+        <Accordion
+          key="add-step-accordion"
+          border="solid"
+          borderColor="gray.700"
+        >
+          {addStep}
+        </Accordion>
         <Center>
-          <Box pt={2} size="md">
+          <Box key="steps-counter" pt={2} size="md">
             {accordionSteps.length} steps
           </Box>
         </Center>

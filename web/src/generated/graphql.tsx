@@ -277,7 +277,7 @@ export type MutationDeleteDialogArgs = {
 
 export type MutationCreateStepArgs = {
   stepData: StepData;
-  exerciseId: Scalars['Float'];
+  exerciseId: Scalars['Int'];
 };
 
 
@@ -567,6 +567,20 @@ export type CreateCategoryMutation = (
   & { createCategory: (
     { __typename?: 'CategoryResponse' }
     & RegularCategoryResponseFragment
+  ) }
+);
+
+export type CreateStepMutationVariables = Exact<{
+  exerciseId: Scalars['Int'];
+  stepData: StepData;
+}>;
+
+
+export type CreateStepMutation = (
+  { __typename?: 'Mutation' }
+  & { createStep: (
+    { __typename?: 'StepResponse' }
+    & RegularStepResponseFragment
   ) }
 );
 
@@ -963,6 +977,17 @@ export const CreateCategoryDocument = gql`
 
 export function useCreateCategoryMutation() {
   return Urql.useMutation<CreateCategoryMutation, CreateCategoryMutationVariables>(CreateCategoryDocument);
+};
+export const CreateStepDocument = gql`
+    mutation CreateStep($exerciseId: Int!, $stepData: StepData!) {
+  createStep(exerciseId: $exerciseId, stepData: $stepData) {
+    ...RegularStepResponse
+  }
+}
+    ${RegularStepResponseFragmentDoc}`;
+
+export function useCreateStepMutation() {
+  return Urql.useMutation<CreateStepMutation, CreateStepMutationVariables>(CreateStepDocument);
 };
 export const DeleteCategoryDocument = gql`
     mutation DeleteCategory($id: Int!) {

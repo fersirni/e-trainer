@@ -1,0 +1,5 @@
+mutation CreateStep($exerciseId: Int!, $stepData: StepData!) {
+  createStep(exerciseId: $exerciseId, stepData: $stepData) {
+    ...RegularStepResponse
+  }
+}
