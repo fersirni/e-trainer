@@ -1,0 +1,5 @@
+mutation UpdateDialog($dialogData: DialogData!) {
+  updateDialog(dialogData: $dialogData) {
+    ...RegularDialogResponse
+  }
+}

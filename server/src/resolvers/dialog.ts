@@ -4,6 +4,7 @@ import {
   Arg,
   Field,
   InputType,
+  Int,
   Mutation,
   ObjectType,
   Query,
@@ -100,7 +101,6 @@ export class DialogResolver {
     console.log(data);
     console.log(drawData);
     console.log(order);
-    // console.log(exercises);
     return errors;
   }
   private async validateUpdateDialogData(
@@ -177,7 +177,7 @@ export class DialogResolver {
   @Mutation(() => DialogResponse)
   @UseMiddleware(isAuth)
   async createDialog(
-    @Arg("stepId") stepId: number,
+    @Arg("stepId", () => Int) stepId: number,
     @Arg("dialogData") dialogData: DialogData
   ): Promise<DialogResponse> {
     let errors = [];

@@ -1,0 +1,5 @@
+mutation CreateDialog($stepId: Int!, $dialogData: DialogData!) {
+  createDialog(stepId: $stepId, dialogData: $dialogData) {
+    ...RegularDialogResponse
+  }
+}

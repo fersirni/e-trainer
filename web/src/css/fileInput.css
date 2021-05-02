@@ -1,0 +1,7 @@
+input[type="file"]::-webkit-file-upload-button {
+  background: #81e6d9;
+  border-width: 0;
+  border-style: solid;
+  box-sizing: border-box;
+  border-radius: 0.375rem;
+}

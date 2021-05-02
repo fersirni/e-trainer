@@ -1,0 +1,11 @@
+fragment RegularDialog on Dialog {
+    id
+    order
+    name
+    description
+    options
+    type
+    answerType
+    data
+    drawData
+}

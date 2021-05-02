@@ -95,7 +95,8 @@ export const StepsAccordion: React.FC<StepsAccordionProps> = ({
       >
         <AccordionButton
           key={`${s.id}-ab`}
-          _expanded={{ bg: "teal", color: "white" }}
+          bg="teal"
+          color="white"
         >
           <Box key={`${s.id}-button`} flex="1" textAlign="left">
             {`${s.order} - ${s.name}`}

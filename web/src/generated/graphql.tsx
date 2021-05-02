@@ -261,7 +261,7 @@ export type MutationDeleteAnswerArgs = {
 
 export type MutationCreateDialogArgs = {
   dialogData: DialogData;
-  stepId: Scalars['Float'];
+  stepId: Scalars['Int'];
 };
 
 
@@ -485,6 +485,22 @@ export type RegularCategoryResponseFragment = (
   )>> }
 );
 
+export type RegularDialogFragment = (
+  { __typename?: 'Dialog' }
+  & Pick<Dialog, 'id' | 'order' | 'name' | 'description' | 'options' | 'type' | 'answerType' | 'data' | 'drawData'>
+);
+
+export type RegularDialogResponseFragment = (
+  { __typename?: 'DialogResponse' }
+  & { dialog?: Maybe<(
+    { __typename?: 'Dialog' }
+    & RegularDialogFragment
+  )>, errors?: Maybe<Array<(
+    { __typename?: 'Error' }
+    & RegularErrorFragment
+  )>> }
+);
+
 export type RegularErrorFragment = (
   { __typename?: 'Error' }
   & Pick<Error, 'message' | 'field' | 'key' | 'entity'>
@@ -567,6 +583,20 @@ export type CreateCategoryMutation = (
   & { createCategory: (
     { __typename?: 'CategoryResponse' }
     & RegularCategoryResponseFragment
+  ) }
+);
+
+export type CreateDialogMutationVariables = Exact<{
+  stepId: Scalars['Int'];
+  dialogData: DialogData;
+}>;
+
+
+export type CreateDialogMutation = (
+  { __typename?: 'Mutation' }
+  & { createDialog: (
+    { __typename?: 'DialogResponse' }
+    & RegularDialogResponseFragment
   ) }
 );
 
@@ -670,6 +700,19 @@ export type UpdateCategoryMutation = (
   & { updateCategory: (
     { __typename?: 'CategoryResponse' }
     & RegularCategoryResponseFragment
+  ) }
+);
+
+export type UpdateDialogMutationVariables = Exact<{
+  dialogData: DialogData;
+}>;
+
+
+export type UpdateDialogMutation = (
+  { __typename?: 'Mutation' }
+  & { updateDialog: (
+    { __typename?: 'DialogResponse' }
+    & RegularDialogResponseFragment
   ) }
 );
 
@@ -896,6 +939,30 @@ export const RegularCategoryResponseFragmentDoc = gql`
 }
     ${RegularCategoryFragmentDoc}
 ${RegularErrorFragmentDoc}`;
+export const RegularDialogFragmentDoc = gql`
+    fragment RegularDialog on Dialog {
+  id
+  order
+  name
+  description
+  options
+  type
+  answerType
+  data
+  drawData
+}
+    `;
+export const RegularDialogResponseFragmentDoc = gql`
+    fragment RegularDialogResponse on DialogResponse {
+  dialog {
+    ...RegularDialog
+  }
+  errors {
+    ...RegularError
+  }
+}
+    ${RegularDialogFragmentDoc}
+${RegularErrorFragmentDoc}`;
 export const RegularExerciseFragmentDoc = gql`
     fragment RegularExercise on Exercise {
   id
@@ -977,6 +1044,17 @@ export const CreateCategoryDocument = gql`
 
 export function useCreateCategoryMutation() {
   return Urql.useMutation<CreateCategoryMutation, CreateCategoryMutationVariables>(CreateCategoryDocument);
+};
+export const CreateDialogDocument = gql`
+    mutation CreateDialog($stepId: Int!, $dialogData: DialogData!) {
+  createDialog(stepId: $stepId, dialogData: $dialogData) {
+    ...RegularDialogResponse
+  }
+}
+    ${RegularDialogResponseFragmentDoc}`;
+
+export function useCreateDialogMutation() {
+  return Urql.useMutation<CreateDialogMutation, CreateDialogMutationVariables>(CreateDialogDocument);
 };
 export const CreateStepDocument = gql`
     mutation CreateStep($exerciseId: Int!, $stepData: StepData!) {
@@ -1068,6 +1146,17 @@ export const UpdateCategoryDocument = gql`
 
 export function useUpdateCategoryMutation() {
   return Urql.useMutation<UpdateCategoryMutation, UpdateCategoryMutationVariables>(UpdateCategoryDocument);
+};
+export const UpdateDialogDocument = gql`
+    mutation UpdateDialog($dialogData: DialogData!) {
+  updateDialog(dialogData: $dialogData) {
+    ...RegularDialogResponse
+  }
+}
+    ${RegularDialogResponseFragmentDoc}`;
+
+export function useUpdateDialogMutation() {
+  return Urql.useMutation<UpdateDialogMutation, UpdateDialogMutationVariables>(UpdateDialogDocument);
 };
 export const UpdateExerciseDocument = gql`
     mutation UpdateExercise($exerciseData: ExerciseData!) {

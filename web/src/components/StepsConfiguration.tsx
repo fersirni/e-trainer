@@ -1,6 +1,7 @@
 import { Box, Center, Flex, Spinner } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 import { Step, useCompleteExerciseQuery } from "../generated/graphql";
+import { DialogConfiguration } from "./DialogConfiguration";
 import { StepConfiguration } from "./StepConfiguration";
 import { StepsAccordion } from "./StepsAccordion";
 
@@ -48,8 +49,14 @@ export const StepsConfiguration: React.FC<StepsConfigurationProps> = ({
         (d: any) => d.id === selectedItem.dialogId
       );
       console.log(selectedDialog);
-      //  TODO: Return dialog component
-      return null;
+      return (
+        <DialogConfiguration
+          key={selectedItem.dialogId}
+          stepId={selectedStep.id}
+          stepType={selectedStep.type}
+          dialog={selectedDialog}
+        />
+      );
     }
     return null;
   };

@@ -1,0 +1,8 @@
+fragment RegularDialogResponse on DialogResponse {
+    dialog {
+        ...RegularDialog
+    }
+    errors {
+        ...RegularError
+    }
+}

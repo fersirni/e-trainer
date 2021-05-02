@@ -132,7 +132,7 @@ export const StepConfiguration: React.FC<StepConfigurationProps> = ({ step, exer
                           <option value="results">Results</option>
                         </Select>
                         <FormErrorMessage>
-                          {form.errors.difficulty}
+                          {form.errors.type}
                         </FormErrorMessage>
                       </FormControl>
                     )}
