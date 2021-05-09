@@ -28,17 +28,17 @@ interface StepConfigurationProps {
   onStepAdded?: any;
 }
 
-export const StepConfiguration: React.FC<StepConfigurationProps> = ({ step, exerciseId, onStepAdded }) => {
+export const StepConfiguration: React.FC<StepConfigurationProps> = ({
+  step,
+  exerciseId,
+  onStepAdded,
+}) => {
   const toast = useToast();
   const router = useRouter();
   const [, updateStep] = useUpdateStepMutation();
   const [, createStep] = useCreateStepMutation();
 
-  const emptyStep = (
-    <>
-      There is no step configured yet.
-    </>
-  );
+  const emptyStep = <>There is no step configured yet.</>;
 
   const handleSubmit = async (values: any, { setErrors }: any) => {
     let response;
@@ -66,21 +66,33 @@ export const StepConfiguration: React.FC<StepConfigurationProps> = ({ step, exer
         isClosable: true,
       });
       if (!savedStep) {
-        console.error("It looks that something went wrong while retrieveing the step :(");
+        console.error(
+          "It looks that something went wrong while retrieveing the step :("
+        );
       } else {
         onStepAdded(savedStep);
       }
     }
   };
-  const { name = "", order = 0, description = "", options = "", type = "", ttl = 0 } = step || {};
+  const {
+    name = "",
+    order = 0,
+    description = "",
+    options = "",
+    type = "",
+    ttl = 0,
+  } = step || {};
   const form = (
-      <>
+    <>
       <Formik
-        initialValues={
-          {
-            name, order, description, options, type, ttl
-          }
-        }
+        initialValues={{
+          name,
+          order,
+          description,
+          options,
+          type,
+          ttl,
+        }}
         onSubmit={handleSubmit}
       >
         {({ isSubmitting }) => (
@@ -112,14 +124,10 @@ export const StepConfiguration: React.FC<StepConfigurationProps> = ({ step, exer
                     {({ field, form }: any) => (
                       <FormControl
                         id="type"
-                        isInvalid={
-                          form.errors.type && form.touched.type
-                        }
+                        isInvalid={form.errors.type && form.touched.type}
                         isRequired
                       >
-                        <FormLabel htmlFor="type">
-                          Step Type
-                        </FormLabel>
+                        <FormLabel htmlFor="type">Step Type</FormLabel>
                         <Select
                           placeholder="Select option"
                           variant="flushed"
@@ -131,9 +139,7 @@ export const StepConfiguration: React.FC<StepConfigurationProps> = ({ step, exer
                           <option value="interactive">Interactive</option>
                           <option value="results">Results</option>
                         </Select>
-                        <FormErrorMessage>
-                          {form.errors.type}
-                        </FormErrorMessage>
+                        <FormErrorMessage>{form.errors.type}</FormErrorMessage>
                       </FormControl>
                     )}
                   </Field>
@@ -141,42 +147,50 @@ export const StepConfiguration: React.FC<StepConfigurationProps> = ({ step, exer
               </Flex>
             </Box>
             <Box mt={8}>
-              <Field name="description">
-                {({ field, form }: any) => (
-                  <FormControl
-                    id="description"
-                    isInvalid={
-                      form.errors.description && form.touched.description
-                    }
-                  >
-                    <FormLabel>Description</FormLabel>
-                    <Textarea
-                      {...field}
-                      placeholder="This step is about..."
-                      variant="flushed"
-                    />
-                    <FormErrorMessage>{form.errors.description}</FormErrorMessage>
-                  </FormControl>
-                )}
-              </Field>
-            </Box>
-            <Box mt={8}>
-              <Field name="options">
-                {({ field, form }: any) => (
-                  <FormControl
-                    id="options"
-                    isInvalid={form.errors.options && form.touched.options}
-                  >
-                    <FormLabel>Advanced Options</FormLabel>
-                    <Textarea
-                      {...field}
-                      placeholder="Expected Json Object"
-                      variant="flushed"
-                    />
-                    <FormErrorMessage>{form.errors.options}</FormErrorMessage>
-                  </FormControl>
-                )}
-              </Field>
+              <Flex>
+                <Box flex={1} pr={10}>
+                  <Field name="description">
+                    {({ field, form }: any) => (
+                      <FormControl
+                        id="description"
+                        isInvalid={
+                          form.errors.description && form.touched.description
+                        }
+                      >
+                        <FormLabel>Description</FormLabel>
+                        <Textarea
+                          {...field}
+                          placeholder="This step is about..."
+                          variant="flushed"
+                        />
+                        <FormErrorMessage>
+                          {form.errors.description}
+                        </FormErrorMessage>
+                      </FormControl>
+                    )}
+                  </Field>
+                </Box>
+                <Box flex={1} pl={10}>
+                  <Field name="options">
+                    {({ field, form }: any) => (
+                      <FormControl
+                        id="options"
+                        isInvalid={form.errors.options && form.touched.options}
+                      >
+                        <FormLabel>Advanced Options</FormLabel>
+                        <Textarea
+                          {...field}
+                          placeholder="Expected Json Object"
+                          variant="flushed"
+                        />
+                        <FormErrorMessage>
+                          {form.errors.options}
+                        </FormErrorMessage>
+                      </FormControl>
+                    )}
+                  </Field>
+                </Box>
+              </Flex>
             </Box>
             <Box mt={8}>
               <Flex>
@@ -205,8 +219,8 @@ export const StepConfiguration: React.FC<StepConfigurationProps> = ({ step, exer
                   <Field name="ttl">
                     {({ field, form }: any) => (
                       <FormControl
-                      id="ttl"
-                      isInvalid={form.errors.ttl && form.touched.ttl}
+                        id="ttl"
+                        isInvalid={form.errors.ttl && form.touched.ttl}
                       >
                         <FormLabel htmlFor="ttl">Duration in seconds</FormLabel>
                         <Input
@@ -254,7 +268,7 @@ export const StepConfiguration: React.FC<StepConfigurationProps> = ({ step, exer
           </Form>
         )}
       </Formik>
-      </>
-    );
+    </>
+  );
   return <>{form || emptyStep}</>;
 };

@@ -355,7 +355,12 @@ const EditCategory: NextPage = () => {
                     <FormLabel htmlFor="isPublic" mb="0">
                       Make it public!
                     </FormLabel>
-                    <Switch {...field} isChecked={isPublic} id="isPublic" />
+                    <Switch
+                      colorScheme="teal"
+                      {...field}
+                      isChecked={isPublic}
+                      id="isPublic"
+                    />
                     <FormErrorMessage>{form.errors.options}</FormErrorMessage>
                   </FormControl>
                 )}

@@ -18,6 +18,7 @@ import { useRouter } from "next/router";
 import React from "react";
 import { toErrorMap } from "../utils/toErrorMap";
 import { DefaultDialog } from "./DefaultDialog";
+import { InteractiveDialog } from "./InteractiveDialog";
 
 interface DialogConfigurationProps {
   dialog: any;
@@ -31,6 +32,9 @@ export const DialogConfiguration: React.FC<DialogConfigurationProps> = ({ dialog
   let dialogConfiguration = null;
   switch (stepType) {
     case 'interactive':
+      dialogConfiguration = (
+        <InteractiveDialog stepId={stepId} dialog={dialog} />
+      );
       break;
     default:
       dialogConfiguration = (

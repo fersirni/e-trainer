@@ -48,7 +48,6 @@ export const StepsConfiguration: React.FC<StepsConfigurationProps> = ({
       const selectedDialog = dialogs.find(
         (d: any) => d.id === selectedItem.dialogId
       );
-      console.log(selectedDialog);
       return (
         <DialogConfiguration
           key={selectedItem.dialogId}
@@ -117,7 +116,6 @@ export const StepsConfiguration: React.FC<StepsConfigurationProps> = ({
     if (!configuration) {
       return;
     }
-    console.log({ newSelected, configuration });
     const newConfiguration = {
       selectedComponent: getSelectedItemComponent(configuration, newSelected),
       exercise: { ...configuration.exercise },

@@ -8,8 +8,9 @@ import { useRouter } from "next/router";
 import { useIsAuth } from "../../../utils/useIsAuth";
 import { Tabs, Tab, TabList, TabPanel, TabPanels, Icon } from "@chakra-ui/react";
 import { ExerciseConfiguration } from "../../../components/ExerciseConfiguration";
-import { TiCogOutline, TiThListOutline } from "react-icons/ti";
+import { TiCogOutline, TiEyeOutline, TiThListOutline } from "react-icons/ti";
 import { StepsConfiguration } from "../../../components/StepsConfiguration";
+import { ExercisePreview } from "../../../components/ExercisePreview";
 
 const EditCategory: NextPage = () => {
   useIsAuth();
@@ -29,6 +30,7 @@ const EditCategory: NextPage = () => {
           <TabList mb="1em">
             <Tab>Configuration <Icon ml={4} as={TiCogOutline} boxSize={4} /></Tab>
             <Tab>Steps and Dialogs <Icon ml={4} as={TiThListOutline} boxSize={4} /></Tab>
+            <Tab>Preview <Icon ml={4} as={TiEyeOutline} boxSize={4} /></Tab>
           </TabList>
           <TabPanels>
             <TabPanel>
@@ -36,6 +38,9 @@ const EditCategory: NextPage = () => {
             </TabPanel>
             <TabPanel>
               <StepsConfiguration exerciseId={exerciseId} />
+            </TabPanel>
+            <TabPanel>
+              <ExercisePreview exerciseId={exerciseId} />
             </TabPanel>
           </TabPanels>
         </Tabs>

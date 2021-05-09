@@ -6,7 +6,6 @@ import {
   AccordionIcon,
   AccordionItem,
   AccordionPanel,
-  Heading,
 } from "@chakra-ui/react";
 import React from "react";
 import { Step } from "../generated/graphql";
@@ -55,13 +54,13 @@ export const StepsAccordion: React.FC<StepsAccordionProps> = ({
     }
     return step.dialogs.sort(compareFunction).map((d: any) => (
       <Box
-      onClick={() => {
-        handleStepOrDialogChange({
-          type: "dialog",
-          stepId: step.id,
-          dialogId: d.id
-        });
-      }}
+        onClick={() => {
+          handleStepOrDialogChange({
+            type: "dialog",
+            stepId: step.id,
+            dialogId: d.id,
+          });
+        }}
         key={d.id}
         pt={2}
         pb={2}
@@ -76,6 +75,7 @@ export const StepsAccordion: React.FC<StepsAccordionProps> = ({
         onMouseLeave={(e: any) => {
           e.target.style.color = "white";
         }}
+        cursor="pointer"
       >
         {d.order} - {d.name}
       </Box>
@@ -93,11 +93,7 @@ export const StepsAccordion: React.FC<StepsAccordionProps> = ({
           });
         }}
       >
-        <AccordionButton
-          key={`${s.id}-ab`}
-          bg="teal"
-          color="white"
-        >
+        <AccordionButton key={`${s.id}-ab`} bg="teal" color="white">
           <Box key={`${s.id}-button`} flex="1" textAlign="left">
             {`${s.order} - ${s.name}`}
           </Box>
@@ -119,7 +115,13 @@ export const StepsAccordion: React.FC<StepsAccordionProps> = ({
         key="new-step-h2"
       >
         <AccordionButton key="add-step-button">
-          <Box key="add-button" flex="1" textAlign="center">
+          <Box
+            color="gray.800"
+            fontWeight="semibold"
+            key="add-button"
+            flex="1"
+            textAlign="center"
+          >
             Add Step
           </Box>
         </AccordionButton>
@@ -128,38 +130,43 @@ export const StepsAccordion: React.FC<StepsAccordionProps> = ({
   );
 
   const accordion = (
-    <>
-      <Box key="steps-box">
-        <Center key="center-title">
-          <Heading key="step-heading" pb={4} size="md">
-            Steps
-          </Heading>
-        </Center>
-        <Accordion
-          key="steps-accordion"
-          border="solid"
-          borderColor="gray.700"
-          maxH={96}
-          overflowY="auto"
-          defaultIndex={[0]}
-          allowMultiple
-        >
-          {accordionSteps}
-        </Accordion>
-        <Accordion
-          key="add-step-accordion"
-          border="solid"
-          borderColor="gray.700"
-        >
-          {addStep}
-        </Accordion>
-        <Center>
-          <Box key="steps-counter" pt={2} size="md">
-            {accordionSteps.length} steps
-          </Box>
-        </Center>
-      </Box>
-    </>
+    <Box mt={8} key="steps-box">
+      <Accordion
+        key="steps-accordion"
+        border="solid"
+        borderColor="gray.700"
+        maxH={96}
+        overflowY="auto"
+        defaultIndex={[0]}
+        allowMultiple
+      >
+        {accordionSteps}
+      </Accordion>
+      <Accordion
+        key="add-step-accordion"
+        border="solid"
+        borderColor="gray.700"
+        borderRadius={10}
+        bg="teal.200"
+        mt={8}
+      >
+        {addStep}
+      </Accordion>
+      <Center>
+        <Box key="steps-counter" pt={2} size="md">
+          {accordionSteps.length} steps
+        </Box>
+      </Center>
+      <Center>
+        <Box key="dialogs-counter" pt={2} size="md">
+          {steps.reduce((acc, step: any) => {
+            const d = step?.dialogs || [];
+            return acc + d.length;
+          }, 0)}{" "}
+          dialogs
+        </Box>
+      </Center>
+    </Box>
   );
 
   const emptySteps = null;

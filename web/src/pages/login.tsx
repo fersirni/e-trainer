@@ -79,7 +79,6 @@ const Login: React.FC<loginProps> = ({}) => {
                   <Button
                     mt={4}
                     type="reset"
-                    isLoading={isSubmitting}
                     colorScheme="gray"
                     onClick={() => {
                       router.push("/");

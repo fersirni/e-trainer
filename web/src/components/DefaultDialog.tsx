@@ -20,6 +20,7 @@ import {
   useUpdateDialogMutation,
   useCreateDialogMutation,
 } from "../generated/graphql";
+import { capitalize } from "../utils/capitalize";
 import { getBase64 } from "../utils/getBase64";
 import { toErrorMap } from "../utils/toErrorMap";
 
@@ -107,7 +108,6 @@ export const DefaultDialog: React.FC<DefaultDialogProps> = ({
     options = "",
     type = "",
     answerType = "notNeeded",
-    drawData = "",
   } = dialog || {};
   let data = dialog?.data;
   try {
@@ -118,6 +118,7 @@ export const DefaultDialog: React.FC<DefaultDialogProps> = ({
     console.error("Data could not bge parse to json:", data);
   }
   const { text, file, fileName } = data || {};
+  const fileTypes = ["image", "audio", "video"];
   const form = (
     <>
       <Formik
@@ -132,7 +133,6 @@ export const DefaultDialog: React.FC<DefaultDialogProps> = ({
           description,
           options,
           answerType,
-          drawData,
         }}
         onSubmit={handleSubmit}
       >
@@ -141,6 +141,27 @@ export const DefaultDialog: React.FC<DefaultDialogProps> = ({
             <Box mt={8}>
               <Flex>
                 <Box flex="1" pr={10}>
+                  <Field name="order" pr={4}>
+                    {({ field, form }: any) => (
+                      <FormControl
+                        id="order"
+                        isInvalid={form.errors.order && form.touched.order}
+                        isRequired
+                      >
+                        <FormLabel htmlFor="order">Order</FormLabel>
+                        <Input
+                          {...field}
+                          id="order"
+                          type="number"
+                          placeholder="1"
+                          variant="flushed"
+                        />
+                        <FormErrorMessage>{form.errors.order}</FormErrorMessage>
+                      </FormControl>
+                    )}
+                  </Field>
+                </Box>
+                <Box flex="3.5" pr={10}>
                   <Field name="name" pr={4}>
                     {({ field, form }: any) => (
                       <FormControl
@@ -160,7 +181,7 @@ export const DefaultDialog: React.FC<DefaultDialogProps> = ({
                     )}
                   </Field>
                 </Box>
-                <Box flex="1" pl={10}>
+                <Box flex="5" pl={10}>
                   <Field name="type">
                     {({ field, form }: any) => (
                       <FormControl
@@ -208,7 +229,7 @@ export const DefaultDialog: React.FC<DefaultDialogProps> = ({
                   )}
                 </Field>
               </Box>
-            ) : dialogDataInput === "image" ? (
+            ) : fileTypes.includes(dialogDataInput) ? (
               <Flex mt={8}>
                 <Box flex="1" pr={10}>
                   <Field name="dataFile">
@@ -219,13 +240,13 @@ export const DefaultDialog: React.FC<DefaultDialogProps> = ({
                           form.errors.dataFile && form.touched.dataFile
                         }
                       >
-                        <FormLabel>Image</FormLabel>
+                        <FormLabel>{capitalize(dialogDataInput)}</FormLabel>
                         <Input
                           mt={4}
                           mb={2}
                           id="dataFile"
                           type="file"
-                          placeholder="Load a new image..."
+                          placeholder="Load a new file..."
                           variant="flushed"
                           onChange={(event) => {
                             const files = event?.currentTarget?.files || [];
@@ -235,7 +256,7 @@ export const DefaultDialog: React.FC<DefaultDialogProps> = ({
                           }}
                         />
                         {fileName ? (
-                          <Center backgroundColor="teal">{fileName} saved</Center>
+                          <Center backgroundColor="teal" borderRadius={6}>{fileName} saved</Center>
                         ) : (
                           <Center color="tomato">No file saved yet</Center>
                         )}
@@ -253,7 +274,7 @@ export const DefaultDialog: React.FC<DefaultDialogProps> = ({
                           form.errors.dataText && form.touched.dataText
                         }
                       >
-                        <FormLabel>Image Description</FormLabel>
+                        <FormLabel>File Description</FormLabel>
                         <Textarea
                           {...field}
                           placeholder="Insert some title or description here..."
@@ -266,7 +287,9 @@ export const DefaultDialog: React.FC<DefaultDialogProps> = ({
                 </Box>
               </Flex>
             ) : (
-              <Box mt={8}>Not implemented yet </Box>
+              <Center borderRadius={6} bgColor="tomato" m={8}>
+                <Box>Not implemented yet </Box>
+              </Center>
             )}
             <Box mt={8}>
               <Flex>
@@ -311,34 +334,6 @@ export const DefaultDialog: React.FC<DefaultDialogProps> = ({
                       </FormControl>
                     )}
                   </Field>
-                </Box>
-              </Flex>
-            </Box>
-            <Box mt={8}>
-              <Flex>
-                <Box flex="1" pr={10}>
-                  <Field name="order" pr={4}>
-                    {({ field, form }: any) => (
-                      <FormControl
-                        id="order"
-                        isInvalid={form.errors.order && form.touched.order}
-                        isRequired
-                      >
-                        <FormLabel htmlFor="order">Order</FormLabel>
-                        <Input
-                          {...field}
-                          id="order"
-                          type="number"
-                          placeholder="1"
-                          variant="flushed"
-                        />
-                        <FormErrorMessage>{form.errors.order}</FormErrorMessage>
-                      </FormControl>
-                    )}
-                  </Field>
-                </Box>
-                <Box flex="1" pl={10}>
-                  Draw data component
                 </Box>
               </Flex>
             </Box>

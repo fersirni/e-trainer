@@ -1,4 +1,4 @@
-export const getBase64 = (file: File): string | undefined => {
+export const getBase64 = (file: File | undefined): string | undefined => {
     if (!file) {
       return;
     }

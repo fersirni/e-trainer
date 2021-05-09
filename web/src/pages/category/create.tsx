@@ -59,7 +59,7 @@ const CreateCategory: NextPage = () => {
   const [, createCategory] = useCreateCategoryMutation();
   const [, updateExercises] = useUpdateExercisesMutation();
   const [{ data, fetching }] = useExercisesQuery({ variables });
-  
+
   const handleSubmit = async (values: any, { setErrors }: any) => {
     const response = await createCategory({ categoryData: { ...values } });
     if (response.data?.createCategory.errors) {
@@ -219,9 +219,7 @@ const CreateCategory: NextPage = () => {
   const body = exercises.map((e: any) => (
     <Tr key={e.id}>
       <Td>{e.id}</Td>
-      <Td>
-        {e.name}
-      </Td>
+      <Td>{e.name}</Td>
       <Td>Coming Soon!</Td>
       <Td isNumeric>{getButton(e.id)}</Td>
     </Tr>
@@ -345,7 +343,7 @@ const CreateCategory: NextPage = () => {
                           <FormLabel htmlFor="isPublic" mb="0">
                             Make it public!
                           </FormLabel>
-                          <Switch {...field} id="isPublic" />
+                          <Switch colorScheme="teal" {...field} id="isPublic" />
                           <FormErrorMessage>
                             {form.errors.options}
                           </FormErrorMessage>
