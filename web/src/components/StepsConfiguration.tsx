@@ -54,13 +54,14 @@ export const StepsConfiguration: React.FC<StepsConfigurationProps> = ({
           stepId={selectedStep.id}
           stepType={selectedStep.type}
           dialog={selectedDialog}
+          onDialogAdded={onDialogAdded}
         />
       );
     }
     return null;
   };
 
-  const getEmptyComponent = () => {
+  const getEmptyStepComponent = () => {
     if (exerciseId) {
       return (
         <StepConfiguration
@@ -71,6 +72,17 @@ export const StepsConfiguration: React.FC<StepsConfigurationProps> = ({
       );
     }
     return null;
+  };
+
+  const getEmptyDialogComponent = (step: any) => {
+    return (
+      <DialogConfiguration
+        key={`${step?.id}-newDialog`}
+        stepId={step?.id}
+        stepType={step?.type}
+        onDialogAdded={onDialogAdded}
+      />
+    );
   };
 
   const getDefaultComponent = (steps: any[] = []) => {
@@ -129,10 +141,24 @@ export const StepsConfiguration: React.FC<StepsConfigurationProps> = ({
       return;
     }
     const newConfiguration = {
-      selectedComponent: getEmptyComponent(),
+      selectedComponent: getEmptyStepComponent(),
       exercise: { ...configuration.exercise },
       selectedItem: {
-        type: "new",
+        type: "newStep",
+      },
+    };
+    setConfiguration(newConfiguration);
+  };
+
+  const handleAddDialog = (step: any) => {
+    if (!configuration) {
+      return;
+    }
+    const newConfiguration = {
+      selectedComponent: getEmptyDialogComponent(step),
+      exercise: { ...configuration.exercise },
+      selectedItem: {
+        type: "newDialog",
       },
     };
     setConfiguration(newConfiguration);
@@ -140,8 +166,19 @@ export const StepsConfiguration: React.FC<StepsConfigurationProps> = ({
 
   const onStepAdded = (newStep: any) => {
     const newConfiguration = { ...configuration };
-    if (configuration?.exercise?.steps) {
+    if (newConfiguration?.exercise?.steps) {
       newConfiguration.exercise.steps.push(newStep);
+    }
+    setConfiguration(newConfiguration);
+  };
+
+  const onDialogAdded = (newDialog: any, stepId: number) => {
+    const newConfiguration = { ...configuration };
+    if (newConfiguration?.exercise?.steps) {
+      const index = newConfiguration.exercise.steps.findIndex((s: any) => (s.id === stepId));
+      const stepDialogs = newConfiguration.exercise.steps[index]?.dialogs || [];
+      stepDialogs.push(newDialog);
+      newConfiguration.exercise.steps[index].dialogs = stepDialogs;
     }
     setConfiguration(newConfiguration);
   };
@@ -156,6 +193,7 @@ export const StepsConfiguration: React.FC<StepsConfigurationProps> = ({
           steps={steps as Step[]}
           handleStepOrDialogChange={handleStepOrDialogChange}
           handleAddStep={handleAddStep}
+          handleAddDialog={handleAddDialog}
         />
       </Box>
       <Box flex="4">{selected}</Box>

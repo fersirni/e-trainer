@@ -19,21 +19,22 @@ interface InteractiveDialogProps {
   dialog?: any;
   stepId?: number;
   onDialogAdded?: any;
+  showConfiguration?: any;
 }
 
 export const InteractiveDialog: React.FC<InteractiveDialogProps> = ({
   dialog,
   stepId,
   onDialogAdded,
+  showConfiguration
 }) => {
   const router = useRouter();
-  const defaultAnswer = dialog?.answers[0] ? dialog.answers[0] : undefined;
-  const [selectedAnswer, setSelectedAnswer] = useState(defaultAnswer as any);
-
-  const emptyDialog = <>There is no dialog configured yet.</>;
+  const [answers, setAnswers] = useState((dialog?.answers || []) as any);
+  const [selectedAnswer, setSelectedAnswer] = useState(answers[0] as any);
 
   const handleSubmit = async (values: any, { setErrors }: any) => {
     console.log({ values, setErrors });
+    // delete fakeid prop
   };
 
   const handleChange = (answer: any) => {
@@ -66,29 +67,27 @@ export const InteractiveDialog: React.FC<InteractiveDialogProps> = ({
   };
 
   const onAnswerAddedOrUpdated = (newAnswer: any) => {
-    if (!dialog) {
-      return;
-    }
-    if (!dialog.answers){
-      dialog.answers = [];
-    }
+    let newAnswers = [...answers];
     // Added but not saved to DB answer
-    if (!newAnswer?.id) {
-      // this fake id is to odentify tyhe new ones in case the user wants to change somenthing before saving
-      if (!newAnswer?.fakeId) {
-        newAnswer.fakeId = Date.now().toString();
-        dialog.answers.push(newAnswer);
-        const lastIndex: number = dialog.answers.length - 1;
-        setSelectedAnswer(dialog.answers[lastIndex]);
-      } else {
-        const modifiedIndex = dialog.answers.findIndex((a: any) => (a?.fakeId === selectedAnswer?.fakeId));
-        dialog.answers[modifiedIndex] = newAnswer;
-        setSelectedAnswer(dialog.answers[modifiedIndex]);
-      }
+    if (!newAnswer?.id && !newAnswer?.fakeId) {
+      // this fake id is to identify tyhe new ones in case the user wants to change somenthing before saving
+      newAnswer.fakeId = Date.now().toString();
+      newAnswers.push(newAnswer);
+      setAnswers(newAnswers);
+      const lastIndex: number = answers.length - 1;
+      setSelectedAnswer(answers[lastIndex]);
     } else {
-      const modifiedIndex = dialog.answers.findIndex((a: any) => (a?.id === newAnswer?.id));
-      dialog.answers[modifiedIndex] = newAnswer;
-      setSelectedAnswer(dialog.answers[modifiedIndex]);
+      let modifiedIndex;
+      if (newAnswer?.id) {
+        modifiedIndex = answers.findIndex((a: any) => a?.id === newAnswer?.id);
+      } else {
+        modifiedIndex = answers.findIndex(
+          (a: any) => a?.fakeId === answers?.fakeId
+        );
+      }
+      newAnswers[modifiedIndex] = newAnswer;
+      setAnswers(newAnswers);
+      setSelectedAnswer(answers[modifiedIndex]);
     }
   };
 
@@ -96,7 +95,35 @@ export const InteractiveDialog: React.FC<InteractiveDialogProps> = ({
     setSelectedAnswer(undefined);
   };
 
-  const answersList = dialog.answers.map((a: any) => (
+  const handleRemoveAnswer = (answer: any) => {
+    return () => {
+      console.log(answer);
+      let index: number = 0;
+      if (answer?.id) {
+        console.log("entre 1");
+        index = answers.findIndex((a: any) => a?.id === answer?.id);
+      } else if (answer?.fakeId) {
+        console.log("entre 2");
+        index = answers.findIndex((a: any) => a?.fakeId === answer?.fakeId);
+      } else {
+        return;
+      }
+      console.log(index);
+      const newAnswers = [...answers];
+      newAnswers.splice(index, 1);
+      setAnswers(newAnswers);
+    };
+  };
+
+  const emptyAnswers = (
+    <Center>
+      <Box p={2} color="tomato">
+        No answers configured yet
+      </Box>
+    </Center>
+  );
+
+  const answersList = answers.map((a: any) => (
     <Box
       cursor="pointer"
       key={`row-${a.id}`}
@@ -123,12 +150,14 @@ export const InteractiveDialog: React.FC<InteractiveDialogProps> = ({
         </Box>
         <Box ml="auto">
           <IconButton
-            aria-label="Delete permanently"
+            aria-label="Delete"
             colorScheme="red"
             boxSize={6}
             size="sm"
             variant="outline"
-            icon={<Icon as={TiTrash} boxSize={6} />}
+            icon={
+              <Icon as={TiTrash} boxSize={6} onClick={handleRemoveAnswer(a)} />
+            }
           />
         </Box>
       </Flex>
@@ -137,6 +166,11 @@ export const InteractiveDialog: React.FC<InteractiveDialogProps> = ({
   const data = dialog?.data;
   const form = (
     <>
+      <Flex>
+        <Box ml="auto">
+          <Button onClick={() => showConfiguration()}>Configuration</Button>
+        </Box>
+      </Flex>
       <Formik
         initialValues={{
           data,
@@ -159,11 +193,13 @@ export const InteractiveDialog: React.FC<InteractiveDialogProps> = ({
                     border="solid"
                     borderColor="gray.700"
                   >
-                    {answersList}
+                    {answers.length > 0 ? answersList : emptyAnswers}
                   </Box>
                   <Center>
                     <Box mt={8} size="md">
-                      <Button colorScheme="teal" onClick={handleAddAnswer} >Add Answer</Button>
+                      <Button colorScheme="teal" onClick={handleAddAnswer}>
+                        Add Answer
+                      </Button>
                     </Box>
                   </Center>
                 </Box>
@@ -210,5 +246,5 @@ export const InteractiveDialog: React.FC<InteractiveDialogProps> = ({
       </Formik>
     </>
   );
-  return <>{form || emptyDialog}</>;
+  return <>{form}</>;
 };

@@ -1,3 +1,4 @@
+import { AddIcon } from "@chakra-ui/icons";
 import {
   Box,
   Center,
@@ -6,14 +7,17 @@ import {
   AccordionIcon,
   AccordionItem,
   AccordionPanel,
+  Button,
 } from "@chakra-ui/react";
 import React from "react";
 import { Step } from "../generated/graphql";
+import { v4 as uuidv4 } from 'uuid';
 
 interface StepsAccordionProps {
   steps: Step[];
   handleStepOrDialogChange: any;
   handleAddStep: any;
+  handleAddDialog: any;
 }
 
 const compareFunction = (first: any, second: any) => {
@@ -32,27 +36,32 @@ const compareFunction = (first: any, second: any) => {
 
 export const StepsAccordion: React.FC<StepsAccordionProps> = ({
   steps,
-  handleStepOrDialogChange: handleStepOrDialogChange,
+  handleStepOrDialogChange,
   handleAddStep,
+  handleAddDialog,
 }) => {
+  const getAddDialog = (step: any) => {
+    return (
+      <Center  key={uuidv4()} pt={2} pb={2}>
+        <Button
+          key={uuidv4()}
+          size="sm"
+          bg="transparent"
+          color="teal.400"
+          cursor="pointer"
+          onClick={() => handleAddDialog(step)}
+        >
+          <AddIcon w={4} h={4} mr={2} />
+          Add dialog
+        </Button>
+      </Center>
+    );
+  };
   const getDialogs = (step: any) => {
     if (!step.dialogs || step.dialogs.length === 0) {
-      return (
-        <Box
-          key="emptyDialogs"
-          pt={2}
-          pb={2}
-          borderBottom="solid"
-          flex="1"
-          textAlign="center"
-          borderBottomColor="gray.700"
-          color="tomato"
-        >
-          No dialogs found
-        </Box>
-      );
+      return getAddDialog(step);
     }
-    return step.dialogs.sort(compareFunction).map((d: any) => (
+    const dialogsList = step.dialogs.sort(compareFunction).map((d: any) => (
       <Box
         onClick={() => {
           handleStepOrDialogChange({
@@ -80,6 +89,8 @@ export const StepsAccordion: React.FC<StepsAccordionProps> = ({
         {d.order} - {d.name}
       </Box>
     ));
+    dialogsList.push(getAddDialog(step));
+    return dialogsList;
   };
 
   const accordionSteps = steps.sort(compareFunction).map((s: any) => (
@@ -138,7 +149,6 @@ export const StepsAccordion: React.FC<StepsAccordionProps> = ({
         maxH={96}
         overflowY="auto"
         defaultIndex={[0]}
-        allowMultiple
       >
         {accordionSteps}
       </Accordion>

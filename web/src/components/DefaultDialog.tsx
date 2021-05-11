@@ -26,22 +26,24 @@ import { toErrorMap } from "../utils/toErrorMap";
 
 interface DefaultDialogProps {
   dialog?: any;
-  stepId?: number;
+  stepId: number;
   onDialogAdded?: any;
+  stepType?: string;
+  showAnswers?: any;
 }
 
 export const DefaultDialog: React.FC<DefaultDialogProps> = ({
   dialog,
   stepId,
+  stepType,
   onDialogAdded,
+  showAnswers,
 }) => {
   const toast = useToast();
   const router = useRouter();
-  const [dialogDataInput, setDialogDataInput] = useState(undefined as any);
+  const [dialogDataInput, setDialogDataInput] = useState("text" as string);
   const [, updateDialog] = useUpdateDialogMutation();
   const [, createDialog] = useCreateDialogMutation();
-
-  const emptyDialog = <>There is no dialog configured yet.</>;
 
   useEffect(() => {
     if (dialog?.type) {
@@ -77,6 +79,11 @@ export const DefaultDialog: React.FC<DefaultDialogProps> = ({
       response = await createDialog({ stepId, dialogData: { ...values } });
       errors = response.data?.createDialog.errors;
       savedDialog = response.data?.createDialog.dialog;
+      if (!savedDialog) {
+        console.error("It looks that something went wrong :(");
+      } else {
+        onDialogAdded(savedDialog, stepId);
+      }
     }
     if (errors) {
       setErrors(toErrorMap(errors));
@@ -89,11 +96,6 @@ export const DefaultDialog: React.FC<DefaultDialogProps> = ({
         duration: 3000,
         isClosable: true,
       });
-      if (!savedDialog) {
-        console.error("It looks that something went wrong :(");
-      } else {
-        onDialogAdded(savedDialog);
-      }
     }
   };
 
@@ -121,6 +123,13 @@ export const DefaultDialog: React.FC<DefaultDialogProps> = ({
   const fileTypes = ["image", "audio", "video"];
   const form = (
     <>
+      {stepType === "interactive" ? (
+        <Flex>
+          <Box ml="auto">
+            <Button onClick={() => showAnswers()}>Answers</Button>
+          </Box>
+        </Flex>
+      ) : null}
       <Formik
         initialValues={{
           name,
@@ -209,7 +218,7 @@ export const DefaultDialog: React.FC<DefaultDialogProps> = ({
                 </Box>
               </Flex>
             </Box>
-            {dialogDataInput === "text" ? (
+            {!dialogDataInput? null : dialogDataInput === "text" ? (
               <Box mt={8}>
                 <Field name="dataText">
                   {({ field, form }: any) => (
@@ -256,7 +265,9 @@ export const DefaultDialog: React.FC<DefaultDialogProps> = ({
                           }}
                         />
                         {fileName ? (
-                          <Center backgroundColor="teal" borderRadius={6}>{fileName} saved</Center>
+                          <Center backgroundColor="teal" borderRadius={6}>
+                            {fileName} saved
+                          </Center>
                         ) : (
                           <Center color="tomato">No file saved yet</Center>
                         )}
@@ -370,5 +381,5 @@ export const DefaultDialog: React.FC<DefaultDialogProps> = ({
       </Formik>
     </>
   );
-  return <>{form || emptyDialog}</>;
+  return <>{form}</>;
 };

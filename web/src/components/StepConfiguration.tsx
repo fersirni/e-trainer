@@ -53,6 +53,13 @@ export const StepConfiguration: React.FC<StepConfigurationProps> = ({
       response = await createStep({ exerciseId, stepData: { ...values } });
       errors = response.data?.createStep.errors;
       savedStep = response.data?.createStep.step;
+      if (!savedStep) {
+        console.error(
+          "It looks that something went wrong while retrieveing the step :("
+        );
+      } else {
+        onStepAdded(savedStep);
+      }
     }
     if (errors) {
       setErrors(toErrorMap(errors));
@@ -65,13 +72,6 @@ export const StepConfiguration: React.FC<StepConfigurationProps> = ({
         duration: 3000,
         isClosable: true,
       });
-      if (!savedStep) {
-        console.error(
-          "It looks that something went wrong while retrieveing the step :("
-        );
-      } else {
-        onStepAdded(savedStep);
-      }
     }
   };
   const {
